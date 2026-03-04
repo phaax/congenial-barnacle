@@ -94,6 +94,10 @@ export class Game {
       [STATE.VICTORY]:    new VictoryScreen(this),
     };
 
+    // Hide loading overlay
+    const overlay = document.getElementById('loading-overlay');
+    if (overlay) overlay.style.display = 'none';
+
     // If we have a pending state transition, apply it now
     if (this.pendingState) {
       this._doChangeState(this.pendingState.state, this.pendingState.data);
