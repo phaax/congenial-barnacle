@@ -41,12 +41,19 @@ export class DialogScreen {
     this._questMode = false;
     this._questMenu = null;
 
-    // Check for available quests at this location
+    // Check for available quests for this specific NPC
     this._availableQuests = [];
-    if (this.npc?.isQuestGiver && this.game.currentLocation) {
-      this._availableQuests = getAvailableQuestsAt(
-        this.game.quests, this.game.currentLocation.id
-      );
+    if (this.npc?.isQuestGiver) {
+      if (this.npc.questIds?.length > 0) {
+        // Filter to only this NPC's assigned quests
+        this._availableQuests = (this.game.quests || []).filter(q =>
+          q.status === 'available' && this.npc.questIds.includes(q.id)
+        );
+      } else if (this.game.currentLocation) {
+        this._availableQuests = getAvailableQuestsAt(
+          this.game.quests, this.game.currentLocation.id
+        );
+      }
     }
   }
 

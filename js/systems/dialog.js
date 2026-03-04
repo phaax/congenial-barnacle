@@ -79,8 +79,27 @@ export function startDialog(npc, game) {
     }
   }
 
-  // Quest giver offers quests
-  if (npc.isQuestGiver && npc.activeQuest) {
+  // Quest giver: add quest-specific intro line based on the NPC's assigned quest
+  if (npc.isQuestGiver && npc.questIds?.length > 0) {
+    const myQuest = game.quests?.find(q =>
+      npc.questIds.includes(q.id) && q.status === 'available'
+    );
+    if (myQuest) {
+      lines.push({ text: buildQuestIntro(myQuest, tags), speaker: npc.name });
+    }
+    const activeQuest = game.quests?.find(q =>
+      npc.questIds.includes(q.id) && q.status === 'active'
+    );
+    if (activeQuest) {
+      lines.push({ text: 'Return when the task is done.', speaker: npc.name });
+    }
+    const completedQuest = game.quests?.find(q =>
+      npc.questIds.includes(q.id) && q.status === 'completed'
+    );
+    if (completedQuest) {
+      lines.push({ text: getLine('quest_giver', 'quest_complete', tags), speaker: npc.name });
+    }
+  } else if (npc.isQuestGiver && npc.activeQuest) {
     if (npc.activeQuest.status === 'completed') {
       lines.push({ text: getLine('quest_giver', 'quest_complete', tags), speaker: npc.name, action: 'turn_in' });
     } else if (npc.activeQuest.status === 'active') {
@@ -110,6 +129,21 @@ export function isDialogDone(session) {
 
 export function getCurrentLine(session) {
   return session.lines[session.idx] || null;
+}
+
+// Build quest-specific intro line from quest data
+function buildQuestIntro(quest, tags) {
+  const desc = quest.description || '';
+  const firstSentence = desc.split('.')[0];
+  const intros = {
+    slay:        `I need a capable adventurer! ${firstSentence}.`,
+    fetch:       `I have an urgent need. ${firstSentence}.`,
+    deliver:     `Time is short! ${firstSentence}.`,
+    investigate: `Something strange is happening. ${firstSentence}.`,
+    clear:       `The situation grows dire. ${firstSentence}.`,
+    escort:      `I need protection. ${firstSentence}.`,
+  };
+  return intros[quest.type] || `I have a task that requires help. ${firstSentence}.`;
 }
 
 // Build shop dialog tags
