@@ -129,23 +129,38 @@ export class DialogScreen {
 
   _openQuestMenu() {
     this._questMode = true;
-    const opts = this._availableQuests.map((q, i) => ({
-      label: q.title,
-      key:   String(i + 1),
-      quest: q,
-    }));
-    opts.push({ label: 'Goodbye', key: 'x' });
-    this._questMenu = new Menu(opts);
-    this._questMenu.onSelect = (i, opt) => {
-      if (opt.key === 'x') {
+
+    if (this._availableQuests.length === 1) {
+      // Single quest: auto-offer with accept/decline
+      const quest = this._availableQuests[0];
+      const opts = [
+        { label: `Accept: ${quest.title.slice(0, 40)}`, key: 'y', quest },
+        { label: 'Decline',                              key: 'n' },
+      ];
+      this._questMenu = new Menu(opts);
+      this._questMenu.onSelect = (i, opt) => {
+        if (opt.quest) { this._offerQuest(opt.quest); return; }
         this._questMode = false;
         this.game.changeState(this.prevState);
-        return;
-      }
-      if (opt.quest) {
-        this._offerQuest(opt.quest);
-      }
-    };
+      };
+    } else {
+      // Multiple quests: list to choose from
+      const opts = this._availableQuests.map((q, i) => ({
+        label: q.title.slice(0, 48),
+        key:   String(i + 1),
+        quest: q,
+      }));
+      opts.push({ label: 'Goodbye', key: 'x' });
+      this._questMenu = new Menu(opts);
+      this._questMenu.onSelect = (i, opt) => {
+        if (opt.key === 'x') {
+          this._questMode = false;
+          this.game.changeState(this.prevState);
+          return;
+        }
+        if (opt.quest) this._offerQuest(opt.quest);
+      };
+    }
   }
 
   _offerQuest(quest) {

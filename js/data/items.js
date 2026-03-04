@@ -79,14 +79,46 @@ export const SHOP_TIERS = {
   3: ['plate_armor', 'tower_shield', 'greater_heal', 'ring_of_magic', 'dark_elf_blade', 'elixir'],
 };
 
+// Role-specific shop inventories
+export const BLACKSMITH_TIERS = {
+  1: ['pitchfork', 'dagger', 'hunting_knife', 'short_sword', 'padded_armor', 'leather_armor', 'buckler'],
+  2: ['iron_axe', 'long_sword', 'short_bow', 'chain_mail', 'kite_shield'],
+  3: ['plate_armor', 'tower_shield', 'dark_elf_blade'],
+};
+
+export const HEALER_TIERS = {
+  1: ['healing_potion', 'healing_herb', 'antidote', 'bread', 'mana_potion'],
+  2: ['greater_heal', 'scroll_fire', 'smoke_bomb'],
+  3: ['elixir', 'ring_of_magic'],
+};
+
+export const TAVERN_TIERS = {
+  1: ['bread', 'healing_herb', 'travel_rations'],
+  2: ['healing_potion', 'smoke_bomb'],
+  3: ['antidote', 'mana_potion'],
+};
+
+const ROLE_TIERS = {
+  general:    SHOP_TIERS,
+  blacksmith: BLACKSMITH_TIERS,
+  healer:     HEALER_TIERS,
+  tavern:     TAVERN_TIERS,
+};
+
 export function getItem(id) {
   return ITEMS.find(i => i.id === id);
 }
 
 export function getShopInventory(tier) {
+  return getShopInventoryByRole('general', tier);
+}
+
+export function getShopInventoryByRole(role, tier) {
+  const tiers = ROLE_TIERS[role] || SHOP_TIERS;
   const ids = [];
   for (let t = 1; t <= Math.min(tier, 3); t++) {
-    ids.push(...(SHOP_TIERS[t] || []));
+    ids.push(...(tiers[t] || []));
   }
   return ids.map(id => getItem(id)).filter(Boolean);
 }
+
