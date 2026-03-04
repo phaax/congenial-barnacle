@@ -118,6 +118,10 @@ export function generateTown(rng, loc) {
 
       const door = drawBuilding(grid, curX, curY, bdef.w, bdef.h);
       buildings.push({ ...bdef, x: curX, y: curY, doorX: door.doorX, doorY: door.doorY });
+      // Clear path in front of door so it's always accessible
+      for (let step = 1; step <= 3; step++) {
+        setTile(grid, door.doorX, door.doorY + step, LOC_TILE.PATH);
+      }
       curX += bdef.w + 2;
       count++;
     }

@@ -7,6 +7,7 @@ export class InputManager {
     this._keyStack    = [];
     this._clickStack  = [];
     this._scrollStack = [];
+    this._moveStack   = [];
 
     this.mouseCol = 0;
     this.mouseRow = 0;
@@ -35,11 +36,15 @@ export class InputManager {
   pushScroll(fn) { this._scrollStack.push(fn); }
   popScroll()    { this._scrollStack.pop(); }
 
+  pushMove(fn)   { this._moveStack.push(fn); }
+  popMove()      { this._moveStack.pop(); }
+
   // Replace all handlers at once (for screen transitions)
-  setHandlers({ key, click, scroll } = {}) {
+  setHandlers({ key, click, scroll, move } = {}) {
     this._keyStack    = key    ? [key]    : [];
     this._clickStack  = click  ? [click]  : [];
     this._scrollStack = scroll ? [scroll] : [];
+    this._moveStack   = move   ? [move]   : [];
   }
 
   _onKey(e) {
@@ -68,6 +73,9 @@ export class InputManager {
     this.mouseRow = row;
     this.renderer.mouseCol = col;
     this.renderer.mouseRow = row;
+    if (this._moveStack.length > 0) {
+      this._moveStack[this._moveStack.length - 1](col, row);
+    }
   }
 
   _onScroll(e) {

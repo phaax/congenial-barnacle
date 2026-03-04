@@ -36,6 +36,10 @@ export class VictoryScreen {
     if (this.menu) this.menu.handleClick(col, row, Math.floor(COLS / 2) - 12, 22);
   }
 
+  handleMove(col, row) {
+    if (this.menu) this.menu.handleHover(col, row, Math.floor(COLS / 2) - 12, 22);
+  }
+
   handleScroll(dir) {}
 
   render(renderer) {

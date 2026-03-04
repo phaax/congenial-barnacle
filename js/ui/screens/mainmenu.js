@@ -100,11 +100,32 @@ export class MainMenuScreen {
     }
   }
 
+  _menuRowForIndex(i) {
+    // _renderMenu: menuStartRow=13, options start at menuStartRow+4=17, spacing=2
+    return 17 + i * 2;
+  }
+
+  _indexAtRow(row) {
+    // Items at rows 17, 19, 21
+    for (let i = 0; i < this.menu.options.length; i++) {
+      if (row === this._menuRowForIndex(i)) return i;
+    }
+    return -1;
+  }
+
   handleClick(col, row, button) {
-    // Menu is centered around col 38, rows 18-20
-    const menuCol = 38;
-    const menuRow = 18;
-    this.menu.handleClick(col, row, menuCol, menuRow);
+    const idx = this._indexAtRow(row);
+    if (idx >= 0 && !this.menu.options[idx].disabled) {
+      this.menu.selected = idx;
+      this.menu.activate();
+    }
+  }
+
+  handleMove(col, row) {
+    const idx = this._indexAtRow(row);
+    if (idx >= 0 && !this.menu.options[idx].disabled) {
+      this.menu.selected = idx;
+    }
   }
 
   handleScroll(dir) {

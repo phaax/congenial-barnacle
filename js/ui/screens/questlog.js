@@ -72,6 +72,14 @@ export class QuestLogScreen {
     }
   }
 
+  handleMove(col, row) {
+    if (row >= 5 && row < 22) {
+      this.list.handleHover(col, row, 1, 5, 38);
+      const quests = this._getQuests();
+      this.selected = quests[this.list.selected] || null;
+    }
+  }
+
   handleScroll(dir) {
     this.list.handleScroll(dir);
     const quests = this._getQuests();

@@ -158,13 +158,13 @@ export class CharCreateScreen {
 
     if (col >= listX && col < listX + listW && row >= listY && row < listY + listH) {
       if (this.step === STEP.RACE)       this.raceList.handleClick(col, row, listX, listY, listW);
-      if (this.step === STEP.GENDER)     this.genderList.handleClick(col, row, listX, listY, listW);
+      if (this.step === STEP.GENDER)     this._handleGenderClick(row);
       if (this.step === STEP.BACKGROUND) this.bgList.handleClick(col, row, listX, listY, listW);
       if (this.step === STEP.SKILLS)     this._handleSkillsClick(col, row, listX, listY, listW);
     }
 
-    // Next button area
-    if (row >= ROWS - 4 && row <= ROWS - 2) {
+    // Next / Back buttons (rendered at row ROWS-4)
+    if (row === ROWS - 4) {
       if (col >= 55 && col < 65) this._nextStep();
       if (col >= 67 && col < 77) this._prevStep();
     }
@@ -175,6 +175,25 @@ export class CharCreateScreen {
     if (this.step === STEP.GENDER)     { if (dir > 0) this.genderList.moveDown();else this.genderList.moveUp();}
     if (this.step === STEP.BACKGROUND) { if (dir > 0) this.bgList.moveDown();    else this.bgList.moveUp();    }
     if (this.step === STEP.SKILLS)     { if (dir > 0) this.skillList.moveDown(); else this.skillList.moveUp(); }
+  }
+
+  handleMove(col, row) {
+    if (this.step === STEP.NAME || this.step === STEP.CONFIRM) return;
+    const listX = 4; // render col = listX+2=4
+    const listY = 5;
+    const listW = 36;
+    if (col < listX || col >= listX + listW) return;
+
+    if (this.step === STEP.GENDER) {
+      // Gender items at rows 6, 8, 10 (listY=6, spacing=2)
+      for (let i = 0; i < GENDERS.length; i++) {
+        if (row === 6 + i * 2) { this.genderList.selected = i; return; }
+      }
+      return;
+    }
+    if (this.step === STEP.RACE)       { this.raceList.handleHover(col, row, listX, listY, listW);   return; }
+    if (this.step === STEP.BACKGROUND) { this.bgList.handleHover(col, row, listX, listY, listW);     return; }
+    if (this.step === STEP.SKILLS)     { this.skillList.handleHover(col, row, listX, listY, listW);  return; }
   }
 
   update(dt) {
@@ -286,20 +305,35 @@ export class CharCreateScreen {
     const key = event.key;
     if (key === 'ArrowUp'   || key === 'k' || key === 'w') { event.preventDefault(); list.moveUp();   return; }
     if (key === 'ArrowDown' || key === 'j' || key === 's') { event.preventDefault(); list.moveDown(); return; }
-    if (key === 'Enter' || key === ' ')                    { event.preventDefault(); this._nextStep(); return; }
-    if (key === 'Tab')                                     { event.preventDefault(); this._nextStep(); return; }
+    if (key === 'Enter' || key === 'Tab')                  { event.preventDefault(); this._nextStep(); return; }
   }
 
   _handleSkillsKey(event) {
     const key = event.key;
     if (key === 'ArrowUp'   || key === 'k') { event.preventDefault(); this.skillList.moveUp();   return; }
     if (key === 'ArrowDown' || key === 'j') { event.preventDefault(); this.skillList.moveDown(); return; }
-    if (key === ' ' || key === 'Enter') {
+    if (key === ' ') {
       event.preventDefault();
       this._toggleSkill(this.skillList.selected);
       return;
     }
-    if (key === 'Tab') { event.preventDefault(); this._nextStep(); return; }
+    if (key === 'Enter' || key === 'Tab') {
+      event.preventDefault();
+      // If max skills selected, Enter advances; otherwise toggle
+      if (this.selectedSkills.length >= this._maxSkills()) {
+        this._nextStep();
+      } else {
+        this._toggleSkill(this.skillList.selected);
+      }
+      return;
+    }
+  }
+
+  _handleGenderClick(row) {
+    // Genders render at rows 6, 8, 10 (listY=6, spacing=2)
+    for (let i = 0; i < GENDERS.length; i++) {
+      if (row === 6 + i * 2) { this.genderList.selected = i; return; }
+    }
   }
 
   _handleSkillsClick(col, row, listX, listY, listW) {
@@ -648,7 +682,27 @@ export class CharCreateScreen {
 
   _renderNavHints(renderer) {
     const bottomRow = ROWS - 2;
-    renderer.write(2, bottomRow, '↑↓ Navigate   SPACE/ENTER Select   ESC Back', C.DARK_GRAY, C.BLACK);
+    if (this.step === 'NAME') {
+      renderer.write(2, bottomRow, 'Type name   ENTER Continue   ESC Back', C.DARK_GRAY, C.BLACK);
+    } else if (this.step === 'SKILLS') {
+      renderer.write(2, bottomRow, '↑↓ Navigate   SPACE Toggle skill   ESC Back', C.DARK_GRAY, C.BLACK);
+    } else if (this.step === 'CONFIRM') {
+      renderer.write(2, bottomRow, 'ENTER Begin Adventure   ESC Back', C.DARK_GRAY, C.BLACK);
+    } else {
+      renderer.write(2, bottomRow, '↑↓ Navigate   ENTER Select   ESC Back', C.DARK_GRAY, C.BLACK);
+    }
+    this._renderNavButtons(renderer);
+  }
+
+  _renderNavButtons(renderer) {
+    if (this.step === 'NAME') return; // NAME step uses its own ENTER hint
+    const btnRow = ROWS - 4;
+    // Next button
+    const isConfirm = this.step === 'CONFIRM';
+    const nextLabel = isConfirm ? '[ BEGIN  ]' : '[ NEXT → ]';
+    renderer.write(55, btnRow, nextLabel, C.BLACK, C.GREEN);
+    // Back button
+    renderer.write(67, btnRow, '[ ← BACK ]', C.BLACK, C.YELLOW);
   }
 
   _renderError(renderer) {

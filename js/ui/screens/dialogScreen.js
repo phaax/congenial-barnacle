@@ -56,7 +56,7 @@ export class DialogScreen {
     if (!this._typeDone) {
       this._typeTimer += dt;
       const charsPerSecond = 40;
-      const newIdx = Math.floor(this._typeTimer / (1000 / charsPerSecond));
+      const newIdx = Math.floor(this._typeTimer * charsPerSecond);
       const line   = this._getCurrentText();
       if (newIdx >= line.length) {
         this._charIdx = line.length;
@@ -172,6 +172,12 @@ export class DialogScreen {
     }
     // Click anywhere to advance
     this._advance();
+  }
+
+  handleMove(col, row) {
+    if (this._questMode && this._questMenu) {
+      this._questMenu.handleHover(col, row, 10, 14);
+    }
   }
 
   handleScroll(dir) {}

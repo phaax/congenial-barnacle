@@ -89,3 +89,21 @@ html, body {
     width: auto;
   }
 }
+
+/* Manual scale levels toggled via JS (class on #game-container) */
+#game-container.scale-1x  { transform: scale(1);   transform-origin: center center; }
+#game-container.scale-15x { transform: scale(1.5); transform-origin: center center; }
+#game-container.scale-2x  { transform: scale(2);   transform-origin: center center; }
+#game-container.scale-25x { transform: scale(2.5); transform-origin: center center; }
+
+/* Scale hint overlay */
+#scale-hint {
+  position: fixed;
+  bottom: 12px;
+  right: 14px;
+  color: #555;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 11px;
+  pointer-events: none;
+  user-select: none;
+}

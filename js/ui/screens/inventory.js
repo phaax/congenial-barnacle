@@ -50,16 +50,23 @@ export class InventoryScreen {
   }
 
   handleClick(col, row, button) {
-    if (col < 40 && row >= 7 && row < 25) {
-      this.list.handleClick(col, row, 1, 7, 38);
-      this.selected = this.game.player.inventory[this.list.selected] || null;
+    // Inventory list renders at col 1, row 9, visibleH 18
+    if (col < 40 && row >= 9 && row < 27) {
+      this.list.handleClick(col, row, 1, 9, 37);
+      this.selected = this.game.player?.inventory[this.list.selected] || null;
     }
-    if (e?.key) return;
-    // Action buttons
+    // Action buttons at row 26
     if (row === 26) {
       if (col >= 1  && col <= 10) this._equip();
       if (col >= 13 && col <= 20) this._use();
       if (col >= 23 && col <= 30) this._drop();
+    }
+  }
+
+  handleMove(col, row) {
+    if (col < 40 && row >= 9 && row < 27) {
+      this.list.handleHover(col, row, 1, 9, 37);
+      this.selected = this.game.player?.inventory[this.list.selected] || null;
     }
   }
 

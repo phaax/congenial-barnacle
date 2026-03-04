@@ -128,6 +128,7 @@ export class Game {
         key:    (e) => next.handleKey(e),
         click:  (col, row, btn) => next.handleClick(col, row, btn),
         scroll: (dir) => next.handleScroll(dir),
+        move:   (col, row) => next.handleMove?.(col, row),
       });
       next.enter(data);
     }
@@ -143,9 +144,10 @@ export class Game {
     this._blinkTimer += dt;
     if (this._blinkTimer > 500) { this._blinkTimer = 0; this.blinkOn = !this.blinkOn; }
 
+    const dtSec = dt / 1000; // screens use seconds for timers
     const screen = this.screens[this.currentState];
     if (screen) {
-      screen.update(dt);
+      screen.update(dtSec);
       screen.render(this.renderer);
     }
     this.renderer.render();
