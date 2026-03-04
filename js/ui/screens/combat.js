@@ -4,8 +4,9 @@ import { getSkill } from '../../data/skills.js';
 import { getItem } from '../../data/items.js';
 import {
   playerAttack, playerCastSpell, playerFlee, playerUseItem,
-  getActiveMonster, startPlayerTurn, COMBAT_STATE as CS
+  getActiveMonster, startPlayerTurn
 } from '../../systems/combat.js';
+const CS = COMBAT_STATE;
 
 export class CombatScreen {
   constructor(game) {
