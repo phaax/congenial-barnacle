@@ -1,0 +1,91 @@
+/* Chronicles of the Realm - DOS-style terminal game */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  background: #000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  overflow: hidden;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+#game-container {
+  position: relative;
+  display: inline-block;
+  /* Subtle CRT scanline effect */
+  /* --crt-line: rgba(0, 0, 0, 0.05); */
+}
+
+#game-canvas {
+  display: block;
+  /* Crisp pixel rendering for retro look */
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  image-rendering: -moz-crisp-edges;
+  cursor: default;
+  outline: none;
+  /* Subtle outer glow */
+  box-shadow:
+    0 0  6px rgba(0, 200, 0, 0.2),
+    0 0 20px rgba(0, 200, 0, 0.1),
+    0 0 40px rgba(0, 200, 0, 0.05);
+  border: 1px solid #111;
+}
+
+/* Loading overlay - shown until screens are ready */
+#loading-overlay {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #55FF55;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 18px;
+  text-align: center;
+  letter-spacing: 2px;
+  line-height: 2;
+  pointer-events: none;
+  transition: opacity 0.5s;
+  z-index: 10;
+}
+
+#loading-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+#loading-sub {
+  font-size: 13px;
+  color: #AAAAAA;
+  display: block;
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+/* Scale canvas to fit window while maintaining aspect ratio */
+@media (max-width: 980px) {
+  #game-canvas {
+    width: 100vw;
+    height: auto;
+  }
+}
+
+@media (max-height: 620px) {
+  #game-canvas {
+    height: 100vh;
+    width: auto;
+  }
+}
