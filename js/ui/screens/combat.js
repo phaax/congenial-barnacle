@@ -51,8 +51,8 @@ export class CombatScreen {
     const player = this.game.player;
     if (!player) return;
 
-    // Ability menu from skills (exclude passive-only abilities)
-    const PASSIVE_ABILITIES = ['backstab'];
+    // Ability menu from skills (exclude passive-only and non-combat abilities)
+    const PASSIVE_ABILITIES = ['backstab', 'forage', 'scout'];
     const spells = [];
     for (const skillId of (player.skills || [])) {
       const skill = getSkill(skillId);
@@ -157,11 +157,20 @@ export class CombatScreen {
     if (!combat || combat.state !== CS.PLAYER_TURN) return;
 
     if (this.mode === 'spell') {
+      if (e.key === 'x' || e.key === 'X' || e.key === 'Escape') { this.mode = 'main'; return; }
       this.spellMenu?.handleKey(e);
       return;
     }
     if (this.mode === 'item') {
+      if (e.key === 'x' || e.key === 'X' || e.key === 'Escape') { this.mode = 'main'; return; }
       this.itemMenu?.handleKey(e);
+      return;
+    }
+
+    // Direct letter shortcuts — intercept before Menu (which maps 's' to moveDown)
+    const k = e.key.toLowerCase();
+    if (k === 'a' || k === 's' || k === 'i' || k === 'f') {
+      this._mainAction(k);
       return;
     }
 
@@ -227,11 +236,15 @@ export class CombatScreen {
         renderer.write(6, 5, '  *** BOSS ENCOUNTER ***', C.YELLOW, C.BLACK);
       }
 
-      // Flavor text (rotating)
+      // Flavor text (rotating) — clip to available width
       const flavor = monster.flavorText?.length > 0
         ? monster.flavorText[Math.floor(Date.now() / 4000) % monster.flavorText.length]
         : '';
-      if (flavor) renderer.write(40, 2, `"${flavor}"`, C.DARK_GRAY, C.BLACK);
+      if (flavor) {
+        const maxFlavor = COLS - 43;
+        const clipped = flavor.length > maxFlavor ? flavor.slice(0, maxFlavor - 3) + '...' : flavor;
+        renderer.write(40, 2, `"${clipped}"`, C.DARK_GRAY, C.BLACK);
+      }
 
       // All enemies in group
       if (combat.monsters.length > 1) {
@@ -283,12 +296,15 @@ export class CombatScreen {
         if (this.mode === 'main') {
           renderer.write(1, 19, ' ACTIONS ', C.YELLOW, C.BLACK);
           this.mainMenu.render(renderer, 4, 21, { width: 20 });
+          renderer.write(2, 28, '[A]ttack [S]kills [I]tem [F]lee', C.DARK_GRAY, C.BLACK);
         } else if (this.mode === 'spell') {
           renderer.write(1, 19, ' ABILITIES ', C.CYAN, C.BLACK);
           this.spellMenu?.render(renderer, 4, 21, { width: 30 });
+          renderer.write(2, 28, '↑↓ Navigate  Enter: Use  [X] Cancel', C.DARK_GRAY, C.BLACK);
         } else if (this.mode === 'item') {
           renderer.write(1, 19, ' ITEMS ', C.YELLOW, C.BLACK);
           this.itemMenu?.render(renderer, 4, 21, { width: 30 });
+          renderer.write(2, 28, '↑↓ Navigate  Enter: Use  [X] Cancel', C.DARK_GRAY, C.BLACK);
         }
       } else if (combat.state === CS.ENEMY_TURN) {
         renderer.writeCenter(22, '-- Enemy turn --', C.DARK_GRAY, C.BLACK, 1, 40);

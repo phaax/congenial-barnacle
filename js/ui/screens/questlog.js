@@ -129,7 +129,7 @@ export class QuestLogScreen {
       const q = this.selected;
       let row = 6;
 
-      renderer.write(42, row++, q.title, C.YELLOW, C.BLACK);
+      renderer.write(42, row++, q.title.slice(0, COLS - 44), C.YELLOW, C.BLACK);
       row++;
 
       const statusColors = {

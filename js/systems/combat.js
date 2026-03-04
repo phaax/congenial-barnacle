@@ -683,9 +683,9 @@ export function applyRewards(player, combat) {
   let leveled = false;
   while (player.xp >= xpToLevel(player.level + 1)) {
     player.level++;
-    player.maxHp += 5;
+    player.maxHp += 8;
     player.hp = player.maxHp; // full heal on level up
-    player.maxMp += 2;
+    player.maxMp += 3;
     player.mp = player.maxMp;
     leveled = true;
   }
@@ -701,7 +701,8 @@ function getXpMultiplier(player) {
 }
 
 export function xpToLevel(level) {
-  return level * level * 60;
+  // Smoother curve: ~200 XP to level 2, ~360 to level 3, ~540 to level 4
+  return level * (level + 1) * 30;
 }
 
 // Process beginning-of-player-turn effects (poison, etc.)

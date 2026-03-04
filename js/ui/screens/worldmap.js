@@ -197,13 +197,14 @@ export class WorldMapScreen {
       const hwy = p.worldY + (mouseRow - vy);
       if (hwx >= 0 && hwx < w.width && hwy >= 0 && hwy < w.height) {
         const hoverLoc = getLocationAt(w, hwx, hwy);
+        const maxW = MAIN_COLS - 2;
         if (hoverLoc && w.fog[hwy * w.width + hwx] > 0) {
           const info = `${hoverLoc.name} (${hoverLoc.type.toLowerCase()})`;
-          renderer.write(1, VIEW_H - 1, info.padEnd(MAIN_COLS - 2), C.CYAN, C.BLACK);
+          renderer.write(1, VIEW_H - 1, info.slice(0, maxW).padEnd(maxW), C.CYAN, C.BLACK);
         } else {
           const hovBiome = getBiome(w.tiles[hwy * w.width + hwx] || 0);
           if (w.fog[hwy * w.width + hwx] > 0) {
-            renderer.write(1, VIEW_H - 1, hovBiome.name.padEnd(MAIN_COLS - 2), C.DARK_GRAY, C.BLACK);
+            renderer.write(1, VIEW_H - 1, hovBiome.name.slice(0, maxW).padEnd(maxW), C.DARK_GRAY, C.BLACK);
           }
         }
       }
