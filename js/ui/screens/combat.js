@@ -3,7 +3,7 @@ import { Menu } from '../menu.js';
 import { getSkill } from '../../data/skills.js';
 import { getItem } from '../../data/items.js';
 import {
-  playerAttack, playerCastSpell, playerFlee, playerUseItem,
+  playerAttack, playerUseAbility, playerFlee, playerUseItem,
   getActiveMonster, startPlayerTurn
 } from '../../systems/combat.js';
 const CS = COMBAT_STATE;
@@ -19,10 +19,10 @@ export class CombatScreen {
     this._resultMsg   = '';
 
     this.mainMenu  = new Menu([
-      { label: 'Attack',    key: 'a' },
-      { label: 'Cast Spell', key: 's' },
-      { label: 'Use Item',  key: 'i' },
-      { label: 'Flee',      key: 'f' },
+      { label: 'Attack',     key: 'a' },
+      { label: 'Use Ability', key: 's' },
+      { label: 'Use Item',   key: 'i' },
+      { label: 'Flee',       key: 'f' },
     ]);
 
     this.spellMenu = null;
@@ -51,18 +51,19 @@ export class CombatScreen {
     const player = this.game.player;
     if (!player) return;
 
-    // Spell menu from skills
+    // Ability menu from skills (exclude passive-only abilities)
+    const PASSIVE_ABILITIES = ['backstab'];
     const spells = [];
     for (const skillId of (player.skills || [])) {
       const skill = getSkill(skillId);
       if (!skill || !skill.abilities) continue;
       for (const ab of skill.abilities) {
-        if (ab.mpCost !== undefined) {
+        if (ab.mpCost !== undefined && !PASSIVE_ABILITIES.includes(ab.id)) {
           spells.push({
             label: `${ab.name} (${ab.mpCost}MP)`,
             key: spells.length === 0 ? '1' : String(spells.length + 1),
             spellId: ab.id,
-            disabled: (player.mp || 0) < ab.mpCost,
+            disabled: ab.mpCost > 0 && (player.mp || 0) < ab.mpCost,
           });
         }
       }
@@ -73,7 +74,7 @@ export class CombatScreen {
     this.spellMenu.onSelect = (i, opt) => {
       if (opt.key === 'x') { this.mode = 'main'; return; }
       if (opt.spellId) {
-        this._executeTurn(() => playerCastSpell(this.game.combat, opt.spellId));
+        this._executeTurn(() => playerUseAbility(this.game.combat, opt.spellId));
       }
     };
 
@@ -283,7 +284,7 @@ export class CombatScreen {
           renderer.write(1, 19, ' ACTIONS ', C.YELLOW, C.BLACK);
           this.mainMenu.render(renderer, 4, 21, { width: 20 });
         } else if (this.mode === 'spell') {
-          renderer.write(1, 19, ' SPELLS ', C.CYAN, C.BLACK);
+          renderer.write(1, 19, ' ABILITIES ', C.CYAN, C.BLACK);
           this.spellMenu?.render(renderer, 4, 21, { width: 30 });
         } else if (this.mode === 'item') {
           renderer.write(1, 19, ' ITEMS ', C.YELLOW, C.BLACK);
@@ -302,7 +303,9 @@ export class CombatScreen {
       if (isVic && combat.totalXp) {
         renderer.writeCenter(15, `+${combat.totalXp} XP  +${combat.totalGold} Gold`, C.WHITE, C.BLACK, 20, 59);
         if (combat.lootItems?.length > 0) {
-          renderer.writeCenter(16, `Found: ${combat.lootItems.join(', ')}`, C.YELLOW, C.BLACK, 20, 59);
+          const lootStr = combat.lootItems.join(', ');
+          const display = lootStr.length > 30 ? lootStr.slice(0, 27) + '...' : lootStr;
+          renderer.writeCenter(16, `Found: ${display}`, C.YELLOW, C.BLACK, 20, 59);
         }
       }
     }

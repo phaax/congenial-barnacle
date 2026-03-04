@@ -29,6 +29,11 @@ export const ITEMS = [
   { id:'dragon_scale',  name:'Dragon Scale Armor',type:ITEM_TYPE.ARMOR, slot:SLOT.ARMOR, value:400, weight:6, def:10, symbol:']', fg:12, desc:'Scales from a dragon, virtually indestructible.', tier:4, prop:'fire_resist' },
   { id:'epic_scale_armor',name:'Ancient Scale Mail',type:ITEM_TYPE.ARMOR, slot:SLOT.ARMOR, value:800, weight:5, def:13, symbol:']', fg:14, desc:'Scales from an ancient dragon, shimmering with power.', tier:5, prop:'fire_resist' },
 
+  // ─── Shields (Offhand) ──────────────────────────────────────────────────────
+  { id:'buckler',      name:'Buckler',      type:ITEM_TYPE.OFFHAND, slot:SLOT.OFFHAND, value:15,  weight:2, def:2, symbol:'O', fg:7,  desc:'A small round shield, quick to block with.', tier:1 },
+  { id:'kite_shield',  name:'Kite Shield',  type:ITEM_TYPE.OFFHAND, slot:SLOT.OFFHAND, value:50,  weight:5, def:4, symbol:'O', fg:7,  desc:'A sturdy iron-banded shield covering arm to shoulder.', tier:2 },
+  { id:'tower_shield', name:'Tower Shield', type:ITEM_TYPE.OFFHAND, slot:SLOT.OFFHAND, value:130, weight:9, def:7, symbol:'O', fg:7,  desc:'A massive shield that covers most of the body.', tier:3 },
+
   // ─── Accessories ────────────────────────────────────────────────────────────
   { id:'cursed_amulet', name:'Cursed Amulet',  type:ITEM_TYPE.ACCESSORY, slot:SLOT.ACCESSORY, value:50, weight:0, symbol:'♦', fg:5, desc:'Dangerous power thrums within.', tier:2, cursed:true, effect:'curse_str' },
   { id:'amulet_of_vigor',name:'Amulet of Vigor',type:ITEM_TYPE.ACCESSORY, slot:SLOT.ACCESSORY, value:100, weight:0, symbol:'♦', fg:14, desc:'+10 max HP.', tier:2, effect:'hp10' },
@@ -69,9 +74,9 @@ export const ITEMS = [
 
 // Shop inventory tiers by town level
 export const SHOP_TIERS = {
-  1: ['dagger', 'short_sword', 'leather_armor', 'padded_armor', 'healing_potion', 'healing_herb', 'antidote', 'bread', 'lockpick', 'arrow'],
-  2: ['long_sword', 'chain_mail', 'short_bow', 'mana_potion', 'scroll_fire', 'smoke_bomb', 'amulet_of_vigor'],
-  3: ['plate_armor', 'greater_heal', 'ring_of_magic', 'dark_elf_blade', 'elixir'],
+  1: ['dagger', 'short_sword', 'leather_armor', 'padded_armor', 'buckler', 'healing_potion', 'healing_herb', 'antidote', 'bread', 'lockpick', 'arrow'],
+  2: ['long_sword', 'chain_mail', 'kite_shield', 'short_bow', 'mana_potion', 'scroll_fire', 'smoke_bomb', 'amulet_of_vigor'],
+  3: ['plate_armor', 'tower_shield', 'greater_heal', 'ring_of_magic', 'dark_elf_blade', 'elixir'],
 };
 
 export function getItem(id) {

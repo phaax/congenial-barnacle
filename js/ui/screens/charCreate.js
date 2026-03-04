@@ -515,7 +515,8 @@ export class CharCreateScreen {
     renderer.write(9, 17, bg.trait?.name || '-', C.CYAN, C.BLACK);
 
     renderer.write(2, 18, 'Recommends: ', C.DARK_GRAY, C.BLACK);
-    renderer.write(14, 18, (bg.startingSkillRecommend || []).join(', '), C.GREEN, C.BLACK);
+    const rec = (bg.startingSkillRecommend || []).join(', ');
+    renderer.write(14, 18, rec.slice(0, 26), C.GREEN, C.BLACK);
   }
 
   _renderSkillsStep(renderer) {
@@ -576,7 +577,8 @@ export class CharCreateScreen {
     renderer.write(14, r,  bg.name, C.WHITE, C.BLACK);
     r++;
     renderer.write(2, r,   'Skills:     ', C.DARK_GRAY, C.BLACK);
-    renderer.write(14, r,  this.selectedSkills.join(', ') || '(none)', C.GREEN, C.BLACK);
+    const skillsStr = this.selectedSkills.join(', ') || '(none)';
+    renderer.write(14, r, skillsStr.slice(0, 27), C.GREEN, C.BLACK);
     r += 2;
 
     renderer.write(2, r, 'Stats:', C.YELLOW, C.BLACK);

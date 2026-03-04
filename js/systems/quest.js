@@ -11,8 +11,8 @@ export function generateQuests(world, rng) {
     if (!loc.questGivers) continue;
 
     for (const giver of loc.questGivers) {
-      // Assign 1-2 quests per giver
-      const count = rng.int(1, 2);
+      // Assign exactly 1 quest per giver
+      const count = 1;
       const templates = rng.shuffle([...QUEST_TEMPLATES]);
 
       giver.questIds = [];

@@ -228,6 +228,90 @@ export function playerCastSpell(combat, spellId) {
   return advanceToEnemyTurn(combat);
 }
 
+// Unified handler for all player skill abilities
+export function playerUseAbility(combat, abilityId) {
+  const player  = combat.player;
+  const monster = getActiveMonster(combat);
+  const rng     = combat.rng;
+
+  // Route magic/healing abilities to existing handler
+  const magicAbilities = ['fireball', 'frost_bolt', 'magic_shield', 'heal', 'cure', 'fortify'];
+  if (magicAbilities.includes(abilityId)) {
+    return playerCastSpell(combat, abilityId);
+  }
+
+  switch (abilityId) {
+    case 'power_strike':
+      return playerAttack(combat, 'power_strike');
+
+    case 'aimed_shot': {
+      if ((player.mp || 0) < 3) { logMsg(combat, 'Not enough MP!', 'system'); return; }
+      player.mp = Math.max(0, (player.mp || 0) - 3);
+      if (!monster) { logMsg(combat, 'No target!', 'system'); return; }
+      const weapon = player.equipment?.weapon;
+      const wItem  = weapon ? getItem(weapon) : null;
+      const base   = wItem ? rng.int(wItem.dmg[0], wItem.dmg[1]) : rng.int(1, 4);
+      const str    = Math.floor((player.stats.str - 10) / 2);
+      const dmg    = Math.max(1, Math.floor((base + str) * 3) - monster.def);
+      monster.hp -= dmg;
+      combat.playerSkipTurn = true;
+      logMsg(combat, `Aimed Shot! ${dmg} damage — you need a moment to recover.`);
+      combat.turn++;
+      if (monster.hp <= 0) return resolveMonsterDeath(combat, monster);
+      return advanceToEnemyTurn(combat);
+    }
+
+    case 'vanish': {
+      if ((player.mp || 0) < 2) { logMsg(combat, 'Not enough MP!', 'system'); return; }
+      player.mp = Math.max(0, (player.mp || 0) - 2);
+      if (rng.chance(70)) {
+        logMsg(combat, 'You vanish into the shadows and escape!');
+        combat.state = COMBAT_STATE.DEFEAT;
+        combat.fled = true;
+      } else {
+        logMsg(combat, 'You fail to vanish!');
+        combat.turn++;
+        advanceToEnemyTurn(combat);
+      }
+      return;
+    }
+
+    case 'second_wind': {
+      if (combat._secondWindUsed) {
+        logMsg(combat, 'Second Wind already used this combat!', 'system');
+        return;
+      }
+      const heal = Math.max(1, Math.floor(player.maxHp * 0.25));
+      player.hp = Math.min(player.maxHp, player.hp + heal);
+      combat._secondWindUsed = true;
+      logMsg(combat, `Second Wind! You recover ${heal} HP.`);
+      combat.turn++;
+      return advanceToEnemyTurn(combat);
+    }
+
+    case 'scout': {
+      if ((player.mp || 0) < 1) { logMsg(combat, 'Not enough MP!', 'system'); return; }
+      player.mp = Math.max(0, (player.mp || 0) - 1);
+      if (monster) {
+        logMsg(combat, `Scout: ${monster.name} — ATK ${monster.atk[0]}-${monster.atk[1]}, DEF ${monster.def}, HP ~${monster.hp}`, 'system');
+      }
+      combat.turn++;
+      return advanceToEnemyTurn(combat);
+    }
+
+    case 'forage':
+      logMsg(combat, 'Cannot forage during combat!', 'system');
+      return; // Don't advance turn
+
+    case 'backstab':
+      logMsg(combat, 'Backstab triggers automatically on the first turn.', 'system');
+      return;
+
+    default:
+      logMsg(combat, `Unknown ability: ${abilityId}`, 'system');
+  }
+}
+
 export function playerUseItem(combat, itemId) {
   const player = combat.player;
   const rng    = combat.rng;
@@ -574,7 +658,7 @@ function getPlayerDefense(player) {
   }
   if (player.equipment.offhand) {
     const offhand = getItem(player.equipment.offhand);
-    if (offhand) def += Math.floor((offhand.def || 0) / 2);
+    if (offhand) def += offhand.def || 0;
   }
   return Math.max(0, def);
 }
@@ -617,7 +701,7 @@ function getXpMultiplier(player) {
 }
 
 export function xpToLevel(level) {
-  return level * level * 100;
+  return level * level * 60;
 }
 
 // Process beginning-of-player-turn effects (poison, etc.)
