@@ -79,6 +79,19 @@ export class Menu {
     return false;
   }
 
+  // Update selected item based on hover position (no activation)
+  handleHover(col, row, menuCol, menuRow) {
+    for (let i = 0; i < this.options.length; i++) {
+      if (row === menuRow + i && col >= menuCol) {
+        if (!this.options[i].disabled) {
+          this.selected = i;
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
   // Render the menu at position, returns height drawn
   render(renderer, col, row, opts = {}) {
     const {
@@ -168,6 +181,16 @@ export class ScrollList {
       if (this.onSelect && this.items[this.selected]) {
         this.onSelect(this.selected, this.items[this.selected]);
       }
+      return true;
+    }
+    return false;
+  }
+
+  handleHover(col, row, listCol, listRow, listWidth) {
+    if (col < listCol || col >= listCol + listWidth) return false;
+    const idx = this.scroll + (row - listRow);
+    if (idx >= 0 && idx < this.items.length) {
+      this.selected = idx;
       return true;
     }
     return false;

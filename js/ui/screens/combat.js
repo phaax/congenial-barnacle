@@ -120,14 +120,14 @@ export class CombatScreen {
     if (combat.state === CS.VICTORY) {
       this._showResult = true;
       this._resultMsg  = 'VICTORY!';
-      this._resultTimer = 2000;
+      this._resultTimer = 2; // seconds
     } else if (combat.state === CS.DEFEAT) {
       if (combat.fled) {
         this.game.endCombat(false, true);
       } else {
         this._showResult = true;
         this._resultMsg  = 'DEFEATED...';
-        this._resultTimer = 2000;
+        this._resultTimer = 2; // seconds
       }
     } else {
       // Process start of next turn
@@ -171,9 +171,22 @@ export class CombatScreen {
     if (this._showResult) return;
     const combat = this.game.combat;
     if (!combat || combat.state !== CS.PLAYER_TURN) return;
-    // Main menu is at row 19-23, col 2
-    if (row >= 19 && row <= 23) {
-      this.mainMenu.handleClick(col, row, 2, 19);
+    // Main/spell/item menus render at col 4, row 21
+    if (row >= 21 && row <= 24) {
+      if (this.mode === 'main')  this.mainMenu.handleClick(col, row, 4, 21);
+      if (this.mode === 'spell') this.spellMenu?.handleClick(col, row, 4, 21);
+      if (this.mode === 'item')  this.itemMenu?.handleClick(col, row, 4, 21);
+    }
+  }
+
+  handleMove(col, row) {
+    if (this._showResult) return;
+    const combat = this.game.combat;
+    if (!combat || combat.state !== CS.PLAYER_TURN) return;
+    if (row >= 21 && row <= 24) {
+      if (this.mode === 'main')  this.mainMenu.handleHover(col, row, 4, 21);
+      if (this.mode === 'spell') this.spellMenu?.handleHover(col, row, 4, 21);
+      if (this.mode === 'item')  this.itemMenu?.handleHover(col, row, 4, 21);
     }
   }
 

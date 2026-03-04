@@ -35,7 +35,11 @@ export class GameOverScreen {
   }
 
   handleClick(col, row, button) {
-    if (this.menu) this.menu.handleClick(col, row, Math.floor(COLS / 2) - 10, 18);
+    if (this.menu) this.menu.handleClick(col, row, Math.floor(COLS / 2) - 12, 18);
+  }
+
+  handleMove(col, row) {
+    if (this.menu) this.menu.handleHover(col, row, Math.floor(COLS / 2) - 12, 18);
   }
 
   handleScroll(dir) {}

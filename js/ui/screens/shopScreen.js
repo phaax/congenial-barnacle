@@ -145,6 +145,13 @@ export class ShopScreen {
     }
   }
 
+  handleMove(col, row) {
+    if (row >= 5 && row < 20) {
+      if (this.mode === 'buy') this.buyList.handleHover(col, row, 1, 5, 38);
+      else                     this.sellList.handleHover(col, row, 1, 5, 38);
+    }
+  }
+
   handleScroll(dir) {
     if (this.mode === 'buy') {
       this.buyList.handleScroll(dir);

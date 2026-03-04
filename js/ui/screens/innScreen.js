@@ -74,7 +74,17 @@ export class InnScreen {
   }
 
   handleClick(col, row, button) {
-    if (this.menu) this.menu.handleClick(col, row, 20, 14);
+    const W = 44, H = 20;
+    const ox = Math.floor((COLS - W) / 2);
+    const oy = Math.floor((ROWS - H) / 2);
+    if (this.menu) this.menu.handleClick(col, row, ox + 2, oy + 13);
+  }
+
+  handleMove(col, row) {
+    const W = 44, H = 20;
+    const ox = Math.floor((COLS - W) / 2);
+    const oy = Math.floor((ROWS - H) / 2);
+    if (this.menu) this.menu.handleHover(col, row, ox + 2, oy + 13);
   }
 
   handleScroll(dir) {}
