@@ -404,23 +404,19 @@ export class CharCreateScreen {
   }
 
   _renderProgress(renderer) {
-    const steps = STEP_ORDER;
-    const current = this._stepIndex();
     const stepLabels = ['Name', 'Race', 'Gender', 'Background', 'Skills', 'Confirm'];
+    const current    = this._stepIndex();
+    const total      = STEP_ORDER.length;
 
-    renderer.write(2, 2, 'Step: ', C.DARK_GRAY, C.BLACK);
-    let cx = 8;
-    for (let i = 0; i < steps.length; i++) {
-      const label = stepLabels[i];
-      const active = i === current;
-      const done   = i < current;
-      const fg = active ? C.YELLOW : (done ? C.GREEN : C.DARK_GRAY);
-      renderer.write(cx, 2, label, fg, C.BLACK);
-      cx += label.length;
-      if (i < steps.length - 1) {
-        renderer.write(cx, 2, ' > ', C.DARK_GRAY, C.BLACK);
-        cx += 3;
-      }
+    // "Step 2/6: Race" — compact single-line header that fits left panel
+    renderer.write(2, 2, `Step ${current + 1}/${total}: `, C.DARK_GRAY, C.BLACK);
+    renderer.write(14, 2, stepLabels[current], C.YELLOW, C.BLACK);
+
+    // Progress dots: ■ done, ▶ current, · pending
+    for (let i = 0; i < total; i++) {
+      const ch = i < current ? '■' : (i === current ? '▶' : '·');
+      const fg = i < current ? C.GREEN : (i === current ? C.YELLOW : C.DARK_GRAY);
+      renderer.set(28 + i * 2, 2, ch, fg, C.BLACK);
     }
 
     // Divider line
@@ -462,7 +458,7 @@ export class CharCreateScreen {
     // Selected race description
     const race = this._currentRace();
     renderer.write(2, 11, '─'.repeat(38), C.DARK_BLUE, C.BLACK);
-    this._wrapWrite(renderer, 2, 12, race.description, 38, C.LIGHT_GRAY, C.BLACK);
+    this._wrapWrite(renderer, 2, 12, race.description, 38, C.LIGHT_GRAY, C.BLACK, 2);
 
     renderer.write(2, 15, 'Traits:', C.YELLOW, C.BLACK);
     let ty = 16;
@@ -506,7 +502,7 @@ export class CharCreateScreen {
 
     const bg = this._currentBackground();
     renderer.write(2, 12, '─'.repeat(38), C.DARK_BLUE, C.BLACK);
-    this._wrapWrite(renderer, 2, 13, bg.description, 38, C.LIGHT_GRAY, C.BLACK);
+    this._wrapWrite(renderer, 2, 13, bg.description, 38, C.LIGHT_GRAY, C.BLACK, 2);
 
     renderer.write(2, 16, 'Starting gold: ', C.DARK_GRAY, C.BLACK);
     renderer.write(17, 16, String(bg.startingGold) + 'g', C.YELLOW, C.BLACK);
@@ -716,12 +712,13 @@ export class CharCreateScreen {
 
   // ─── Utility ─────────────────────────────────────────────────────────────────
 
-  _wrapWrite(renderer, col, row, text, width, fg, bg) {
+  _wrapWrite(renderer, col, row, text, width, fg, bg, maxRows = 99) {
     if (!text) return 0;
     const words = text.split(' ');
     let line = '';
     let r = row;
     for (const word of words) {
+      if (r - row >= maxRows) break;
       if ((line + word).length > width) {
         renderer.write(col, r, line.trimEnd(), fg, bg);
         r++;
@@ -730,7 +727,7 @@ export class CharCreateScreen {
         line += word + ' ';
       }
     }
-    if (line.trim()) {
+    if (line.trim() && r - row < maxRows) {
       renderer.write(col, r, line.trimEnd(), fg, bg);
       r++;
     }

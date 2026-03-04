@@ -154,10 +154,10 @@ export function generateTown(rng, loc) {
     });
   }
 
-  // Add quest givers from location
+  // Add quest givers from location (place unplaced ones near the road)
   if (loc.questGivers) {
     for (const qg of loc.questGivers) {
-      // Place near the road
+      if (qg._placed) continue; // already placed inside a building
       npcs.push({
         id: `qg_${qg.name}`,
         name: qg.name,
@@ -167,6 +167,7 @@ export function generateTown(rng, loc) {
         y: roadY + rng.int(-2, 2),
         dialogSeen: false,
         isQuestGiver: true,
+        questIds: qg.questIds || [],
       });
     }
   }
@@ -190,41 +191,79 @@ export function generateTown(rng, loc) {
 
   grid.npcs = npcs;
   grid.buildings = buildings;
-  grid.playerStart = { x: exitX, y: exitY - 1 };
+  grid.playerStart = { x: roadX, y: roadY }; // start at road center
 
   return grid;
 }
 
 function buildingNPCs(rng, building, loc) {
   const npcs = [];
+  const tier = loc.tier || 1;
   switch (building.label) {
     case 'inn':
-      npcs.push({ id: `inn_${building.x}`, name: rng.pick(NPC_NAMES.innkeeper), type: 'innkeeper', pool: 'innkeeper',
-        isInnkeeper: true, innName: loc.innName || 'The Inn' });
+      npcs.push({
+        id: `inn_${building.x}`, name: rng.pick(NPC_NAMES.innkeeper),
+        type: 'innkeeper', pool: 'innkeeper',
+        isInnkeeper: true, innName: loc.innName || 'The Inn',
+        shopLabel: loc.innName || 'The Inn',
+      });
       break;
-    case 'tavern':
-      npcs.push({ id: `bar_${building.x}`, name: rng.pick(NPC_NAMES.barkeep), type: 'barkeep', pool: 'barkeep' });
+    case 'tavern': {
+      const barName = rng.pick(NPC_NAMES.barkeep);
+      npcs.push({
+        id: `bar_${building.x}`, name: barName,
+        type: 'barkeep', pool: 'barkeep',
+        isShopkeeper: true, shopRole: 'tavern', shopTier: tier,
+        shopLabel: 'The Tavern Bar',
+      });
       npcs.push({ id: `vil_${building.x}`, name: rng.pick(NPC_NAMES.villager), type: 'villager', pool: 'villager' });
       break;
+    }
     case 'shop':
-      npcs.push({ id: `shop_${building.x}`, name: rng.pick(NPC_NAMES.shopkeeper), type: 'shopkeeper', pool: 'shopkeeper',
-        isShopkeeper: true, shopTier: loc.tier || 1 });
+      npcs.push({
+        id: `shop_${building.x}`, name: rng.pick(NPC_NAMES.shopkeeper),
+        type: 'shopkeeper', pool: 'shopkeeper',
+        isShopkeeper: true, shopRole: 'general', shopTier: tier,
+        shopLabel: 'General Store',
+      });
       break;
     case 'healer':
-      npcs.push({ id: `heal_${building.x}`, name: rng.pick(NPC_NAMES.healer), type: 'healer', pool: 'healer',
-        isHealer: true });
+      npcs.push({
+        id: `heal_${building.x}`, name: rng.pick(NPC_NAMES.healer),
+        type: 'healer', pool: 'healer',
+        isShopkeeper: true, shopRole: 'healer', shopTier: tier,
+        shopLabel: 'Healer\'s Supplies',
+      });
       break;
     case 'temple':
-      npcs.push({ id: `temp_${building.x}`, name: rng.pick(NPC_NAMES.healer), type: 'healer', pool: 'healer',
-        isHealer: true });
+      npcs.push({
+        id: `temp_${building.x}`, name: rng.pick(NPC_NAMES.healer),
+        type: 'healer', pool: 'healer',
+        isShopkeeper: true, shopRole: 'healer', shopTier: tier,
+        shopLabel: 'Temple Stores',
+      });
       break;
-    case 'guild':
-      npcs.push({ id: `guild_${building.x}`, name: rng.pick(NPC_NAMES.quest_giver), type: 'quest_giver', pool: 'quest_giver',
-        isQuestGiver: true });
+    case 'guild': {
+      // Place one of this town's quest givers inside the guild hall
+      const giver = (loc.questGivers || []).find(g => !g._placed);
+      if (giver) {
+        giver._placed = true;
+        npcs.push({
+          id: `guild_${building.x}`, name: giver.name,
+          type: 'quest_giver', pool: 'quest_giver',
+          isQuestGiver: true, questIds: giver.questIds || [],
+          dialogSeen: false,
+        });
+      }
       break;
+    }
     case 'blacksmith':
-      npcs.push({ id: `smith_${building.x}`, name: rng.pick(NPC_NAMES.shopkeeper), type: 'shopkeeper', pool: 'shopkeeper',
-        isShopkeeper: true, shopTier: loc.tier || 1, smithOnly: true });
+      npcs.push({
+        id: `smith_${building.x}`, name: rng.pick(NPC_NAMES.shopkeeper),
+        type: 'shopkeeper', pool: 'shopkeeper',
+        isShopkeeper: true, shopRole: 'blacksmith', shopTier: tier,
+        shopLabel: 'Blacksmith\'s Forge',
+      });
       break;
     default: // house
       if (rng.chance(60)) {

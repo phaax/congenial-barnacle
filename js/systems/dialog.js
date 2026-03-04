@@ -1,28 +1,34 @@
 import { DIALOG_POOLS, processDialog, getLine } from '../data/dialog.js';
 
-// Build dialog tags from game state
-export function buildTags(game) {
+// Build dialog tags from game state, optionally enriched with quest data
+export function buildTags(game, quest = null) {
   const player = game.player;
   const loc    = game.currentLocation;
   const world  = game.world;
+  const nearbyLoc = getNearbyLocationName(world, player.worldX, player.worldY);
   return {
     name:      player.name,
     town:      loc ? loc.name : 'town',
     inn:       loc ? (loc.innName || 'the inn') : 'the inn',
-    location:  getNearbyLocationName(world, player.worldX, player.worldY),
+    location:  quest?.targetLocName || nearbyLoc,
     goal_item: world?.goal?.keyItem?.name || 'the artifact',
     boss:      world?.goal?.bossId || 'the enemy',
     key_item:  world?.goal?.keyItem?.name || 'the key',
-    items:     world?.goal?.keyItem?.name + 's' || 'the items',
-    price:     '0',   // override per context
-    need:      'possession',
-    task:      'a task',
-    target_npc:  'someone',
-    target_town: 'a nearby town',
-    item:        'an item',
-    count:       '3',
-    location2:   'nearby',
+    items:     (world?.goal?.keyItem?.name || 'the item') + 's',
+    price:     '0',
+    need:      quest ? _questNeed(quest) : 'possession',
+    task:      quest ? quest.title : 'a task',
+    target_npc:  'the contact',
+    target_town: quest?.targetLocName || 'a nearby town',
+    item:        quest?.targetItem || 'an item',
+    count:       quest ? String(quest.progressMax) : '3',
+    location2:   nearbyLoc,
   };
+}
+
+function _questNeed(quest) {
+  const needs = { slay: 'help', fetch: 'item', deliver: 'courier', investigate: 'investigator', clear: 'champion', escort: 'escort' };
+  return needs[quest.type] || 'help';
 }
 
 function getNearbyLocationName(world, x, y) {
@@ -38,7 +44,12 @@ function getNearbyLocationName(world, x, y) {
 
 // Start a dialog session with an NPC
 export function startDialog(npc, game) {
-  const tags    = buildTags(game);
+  // Find NPC's quest (if any) to enrich tags
+  const npcQuest = npc.questIds?.length > 0
+    ? (game.quests || []).find(q => npc.questIds.includes(q.id) && q.status === 'available')
+    : null;
+
+  const tags    = buildTags(game, npcQuest);
   tags.inn      = npc.innName || tags.inn;
 
   const pool    = npc.pool || 'villager';

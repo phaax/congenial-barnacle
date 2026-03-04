@@ -222,7 +222,8 @@ export class Game {
     this.addMessage(`Welcome to the realm, ${this.player.name}!`, 'system');
     this.addMessage(`Your quest: ${this.world.goal.shortName}.`, 'quest');
 
-    this.changeState(STATE.WORLD_MAP);
+    // Start player inside the starting town
+    this.enterLocation(start);
   }
 
   // ─── Location Entry ──────────────────────────────────────────────────────────
@@ -423,8 +424,10 @@ export class Game {
       this.currentLayout   = null;
 
       // Force regen of location layouts (they're lazy anyway)
+      // Also reset _placed flags so guild NPCs are re-placed correctly
       for (const loc of this.world.locations) {
         loc.layout = null;
+        if (loc.questGivers) loc.questGivers.forEach(g => { g._placed = false; });
       }
 
       updateFog(this.world, this.player.worldX, this.player.worldY, 5);

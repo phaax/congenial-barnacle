@@ -1,6 +1,6 @@
 import { C, COLS, ROWS, STATE } from '../../data/constants.js';
-import { getItem, getShopInventory } from '../../data/items.js';
-import { ScrollList } from '../menu.js';
+import { getItem, getShopInventoryByRole } from '../../data/items.js';
+import { ScrollList, Confirm } from '../menu.js';
 
 export class ShopScreen {
   constructor(game) {
@@ -12,15 +12,18 @@ export class ShopScreen {
     this.mode      = 'buy'; // 'buy' or 'sell'
     this.message   = '';
     this.messageColor = C.WHITE;
+    this._confirm  = null; // Confirm dialog instance when pending
   }
 
   enter(data) {
     this.npc  = data?.npc || null;
     this.mode = 'buy';
     this.message = '';
+    this._confirm = null;
 
-    const tier = this.npc?.shopTier || 1;
-    this.shopItems = getShopInventory(tier);
+    const tier     = this.npc?.shopTier || 1;
+    const role     = this.npc?.shopRole || 'general';
+    this.shopItems = getShopInventoryByRole(role, tier);
 
     this.buyList.setItems(this.shopItems, 14);
     this.buyList.onSelect = () => {};
@@ -40,12 +43,16 @@ export class ShopScreen {
     this.sellList.onSelect = () => {};
   }
 
-  _buy() {
+  _isEquipped(invItem) {
+    const eq = this.game.player?.equipment || {};
+    return Object.values(eq).includes(invItem.id);
+  }
+
+  _requestBuy() {
     const player = this.game.player;
     if (!player) return;
 
-    const list = this.buyList;
-    const item = this.shopItems[list.selected];
+    const item = this.shopItems[this.buyList.selected];
     if (!item) return;
 
     if (player.gold < item.value) {
@@ -59,6 +66,16 @@ export class ShopScreen {
       return;
     }
 
+    this._confirm = new Confirm(
+      `Buy ${item.name} for ${item.value}g?`,
+      () => { this._executeBuy(item); this._confirm = null; },
+      () => { this._confirm = null; }
+    );
+  }
+
+  _executeBuy(item) {
+    const player = this.game.player;
+    if (!player) return;
     player.gold -= item.value;
     player.inventory.push({ id: item.id, qty: 1 });
     this._refreshSellList();
@@ -67,20 +84,36 @@ export class ShopScreen {
     this.game.addMessage(`Bought ${item.name}.`, 'normal');
   }
 
-  _sell() {
+  _requestSell() {
     const player = this.game.player;
     if (!player) return;
 
-    const inv      = player.inventory.filter(i => { const it = getItem(i.id); return it && it.type !== 'quest'; });
-    const invItem  = inv[this.sellList.selected];
+    const inv     = player.inventory.filter(i => { const it = getItem(i.id); return it && it.type !== 'quest'; });
+    const invItem = inv[this.sellList.selected];
     if (!invItem) return;
 
-    const item  = getItem(invItem.id);
+    const item = getItem(invItem.id);
     if (!item) return;
 
-    const price = Math.max(1, Math.floor(item.value * 0.5));
-    player.gold += price;
+    if (this._isEquipped(invItem)) {
+      this.message = `Unequip ${item.name} before selling it.`;
+      this.messageColor = C.RED;
+      return;
+    }
 
+    const price = Math.max(1, Math.floor(item.value * 0.5));
+    this._confirm = new Confirm(
+      `Sell ${item.name} for ${price}g?`,
+      () => { this._executeSell(invItem, item, price); this._confirm = null; },
+      () => { this._confirm = null; }
+    );
+  }
+
+  _executeSell(invItem, item, price) {
+    const player = this.game.player;
+    if (!player) return;
+
+    player.gold += price;
     const idx = player.inventory.findIndex(i => i === invItem);
     if (idx !== -1) {
       if (player.inventory[idx].qty > 1) {
@@ -89,7 +122,6 @@ export class ShopScreen {
         player.inventory.splice(idx, 1);
       }
     }
-
     this._refreshSellList();
     this.message = `Sold ${item.name} for ${price}g.`;
     this.messageColor = C.YELLOW;
@@ -106,6 +138,11 @@ export class ShopScreen {
   update(dt) {}
 
   handleKey(e) {
+    if (this._confirm) {
+      this._confirm.handleKey(e);
+      return;
+    }
+
     if (e.key === 'Escape') { this._leave(); return; }
 
     if (e.key === 'Tab') {
@@ -119,14 +156,23 @@ export class ShopScreen {
 
     if (this.mode === 'buy') {
       if (this.buyList.handleKey(e)) return;
-      if (e.key === 'Enter' || e.key === ' ') { this._buy(); return; }
+      if (e.key === 'Enter' || e.key === ' ') { this._requestBuy(); return; }
     } else {
       if (this.sellList.handleKey(e)) return;
-      if (e.key === 'Enter' || e.key === ' ') { this._sell(); return; }
+      if (e.key === 'Enter' || e.key === ' ') { this._requestSell(); return; }
     }
   }
 
   handleClick(col, row, button) {
+    if (this._confirm) {
+      const cx = Math.floor(COLS / 2) - 12;
+      const cy = Math.floor(ROWS / 2) - 3;
+      this._confirm.handleKey({ key: row === cy + 3 && col >= cx + 4 && col <= cx + 8 ? 'n' :
+                                      row === cy + 3 && col >= cx + 11 && col <= cx + 15 ? 'y' : '' });
+      // Simpler: just delegate click as key press with Enter on the confirm option
+      return;
+    }
+
     if (row === 2) {
       if (col >= 2  && col <= 12) { this.mode = 'buy';  this.message = ''; return; }
       if (col >= 14 && col <= 25) { this.mode = 'sell'; this.message = ''; return; }
@@ -140,12 +186,13 @@ export class ShopScreen {
     }
     if (row === 22) {
       if (col >= 2 && col <= 14) {
-        if (this.mode === 'buy') this._buy(); else this._sell();
+        if (this.mode === 'buy') this._requestBuy(); else this._requestSell();
       }
     }
   }
 
   handleMove(col, row) {
+    if (this._confirm) return;
     if (row >= 5 && row < 20) {
       if (this.mode === 'buy') this.buyList.handleHover(col, row, 1, 5, 38);
       else                     this.sellList.handleHover(col, row, 1, 5, 38);
@@ -153,6 +200,7 @@ export class ShopScreen {
   }
 
   handleScroll(dir) {
+    if (this._confirm) return;
     if (this.mode === 'buy') {
       this.buyList.handleScroll(dir);
     } else {
@@ -162,15 +210,17 @@ export class ShopScreen {
 
   render(renderer) {
     renderer.clear(C.BLACK);
-    renderer.drawPanel(0, 0, COLS, ROWS, 'SHOP', C.BROWN, C.BLACK, 'double');
 
-    const shopName = this.npc?.shopName || 'General Store';
+    const shopTitle = this.npc?.shopName || this._shopTitle();
+    renderer.drawPanel(0, 0, COLS, ROWS, shopTitle, C.BROWN, C.BLACK, 'double');
+
+    const shopName = this.npc?.shopLabel || 'General Store';
     renderer.writeCenter(1, shopName, C.YELLOW, C.BLACK, 0, COLS - 1);
 
     // Tabs
     const buyFg = this.mode === 'buy' ? C.BLACK : C.WHITE;
     const buyBg = this.mode === 'buy' ? C.CYAN  : C.BLACK;
-    renderer.write(2,  2, '[B]uy',  buyFg,                               buyBg);
+    renderer.write(2,  2, '[B]uy',  buyFg, buyBg);
     const selFg = this.mode === 'sell' ? C.BLACK : C.WHITE;
     const selBg = this.mode === 'sell' ? C.CYAN  : C.BLACK;
     renderer.write(9,  2, '[S]ell', selFg, selBg);
@@ -196,27 +246,31 @@ export class ShopScreen {
       renderItem: (r, col, row, entry, isSel, width, fg, bg) => {
         const item = this.mode === 'buy' ? entry : getItem(entry.id);
         if (!item) return;
-        const price  = this.mode === 'buy' ? item.value : Math.max(1, Math.floor(item.value * 0.5));
-        const priceStr = `${price}g`.padStart(6);
-        const name   = item.name.slice(0, width - 8).padEnd(width - 8);
-        r.write(col, row, `${name}${priceStr}`, fg, bg);
+        const equipped   = this.mode === 'sell' && this._isEquipped(entry);
+        const price      = this.mode === 'buy' ? item.value : Math.max(1, Math.floor(item.value * 0.5));
+        const priceStr   = `${price}g`.padStart(6);
+        const equip      = equipped ? '[E]' : '   ';
+        const name       = item.name.slice(0, width - 11).padEnd(width - 11);
+        const itemFg     = equipped ? C.DARK_GRAY : fg;
+        r.write(col, row, `${equip}${name}${priceStr}`, itemFg, bg);
       }
     });
 
     // Details pane
-    const selIdx = activeList.selected;
+    const selIdx   = activeList.selected;
     const selEntry = items[selIdx];
     if (selEntry) {
-      const item = this.mode === 'buy' ? selEntry : getItem(selEntry.id);
+      const item     = this.mode === 'buy' ? selEntry : getItem(selEntry.id);
+      const equipped = this.mode === 'sell' && this._isEquipped(selEntry);
       if (item) {
         let dr = 5;
-        renderer.write(42, dr++, item.name, C.YELLOW, C.BLACK);
+        renderer.write(42, dr++, item.name.slice(0, COLS - 44), C.YELLOW, C.BLACK);
         dr++;
         renderer.write(42, dr++, `Type: ${item.type}`, C.LIGHT_GRAY, C.BLACK);
-        if (item.dmg) renderer.write(42, dr++, `Dmg: ${item.dmg[0]}-${item.dmg[1]}`,  C.RED,   C.BLACK);
-        if (item.def) renderer.write(42, dr++, `Def: +${item.def}`,                    C.BLUE,  C.BLACK);
-        if (item.heal)renderer.write(42, dr++, `Heals: ${item.heal} HP`,              C.GREEN, C.BLACK);
-        if (item.mp)  renderer.write(42, dr++, `Restores: ${item.mp} MP`,             C.CYAN,  C.BLACK);
+        if (item.dmg)  renderer.write(42, dr++, `Dmg:   ${item.dmg[0]}-${item.dmg[1]}`, C.RED,   C.BLACK);
+        if (item.def)  renderer.write(42, dr++, `Def:   +${item.def}`,                   C.BLUE,  C.BLACK);
+        if (item.heal) renderer.write(42, dr++, `Heals: ${item.heal} HP`,               C.GREEN, C.BLACK);
+        if (item.mp)   renderer.write(42, dr++, `MP:    +${item.mp}`,                   C.CYAN,  C.BLACK);
         dr++;
 
         const buyPrice  = item.value;
@@ -225,7 +279,11 @@ export class ShopScreen {
         renderer.write(42, dr++, `Sell: ${sellPrice}g`, C.YELLOW, C.BLACK);
         dr++;
 
-        // Desc wrapped
+        if (equipped) {
+          renderer.write(42, dr++, '[Currently Equipped]', C.DARK_GRAY, C.BLACK);
+          dr++;
+        }
+
         if (item.desc) {
           const words = item.desc.split(' ');
           let line = '';
@@ -245,10 +303,32 @@ export class ShopScreen {
 
     renderer.hline(1, 21, COLS - 2, '─', C.DARK_GRAY);
 
+    // Action button
+    const actionLabel = this.mode === 'buy' ? '[ Buy ]' : '[ Sell ]';
+    renderer.write(2, 22, actionLabel, C.BLACK, C.GREEN);
+
     if (this.message) {
-      renderer.write(2, 22, this.message.slice(0, COLS - 4), this.messageColor, C.BLACK);
+      renderer.write(12, 22, this.message.slice(0, COLS - 14), this.messageColor, C.BLACK);
     }
 
-    renderer.write(2, ROWS - 2, '[↑↓] Select  [Enter] Confirm  [Tab] Toggle  [Esc] Leave', C.DARK_GRAY, C.BLACK);
+    renderer.write(2, ROWS - 2, '[↑↓] Select  [Enter] Confirm  [B/S] Toggle  [Esc] Leave', C.DARK_GRAY, C.BLACK);
+
+    // Confirmation dialog overlay
+    if (this._confirm) {
+      const cx = Math.floor(COLS / 2) - 12;
+      const cy = Math.floor(ROWS / 2) - 3;
+      this._confirm.render(renderer, cx, cy);
+    }
+  }
+
+  _shopTitle() {
+    const role = this.npc?.shopRole || 'general';
+    const titles = {
+      blacksmith: 'BLACKSMITH',
+      healer:     'HEALER\'S SUPPLY',
+      tavern:     'THE TAVERN',
+      general:    'SHOP',
+    };
+    return titles[role] || 'SHOP';
   }
 }
