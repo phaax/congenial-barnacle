@@ -72,7 +72,19 @@ export class JukeboxScreen {
 
     if (k === 'Enter' || k === ' ') {
       event.preventDefault();
-      this.list.activate();
+      this._playTrack(this.list.selected);
+      return;
+    }
+
+    // Arrow keys and Page Up/Down handled by ScrollList
+    if (k === 'ArrowUp' || k === 'w' || k === 'W' || k === 'k' || k === 'K') {
+      event.preventDefault();
+      this.list.moveUp();
+      return;
+    }
+    if (k === 'ArrowDown') {
+      event.preventDefault();
+      this.list.moveDown();
       return;
     }
 

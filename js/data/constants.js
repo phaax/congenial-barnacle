@@ -68,6 +68,7 @@ export const STATE = {
   GAME_OVER:        'GAME_OVER',
   VICTORY:          'VICTORY',
   JUKEBOX:          'JUKEBOX',    // Music player overlay
+  SETTINGS:         'SETTINGS',   // Settings / options menu
 };
 
 // Location types

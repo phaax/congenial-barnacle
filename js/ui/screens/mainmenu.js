@@ -35,6 +35,7 @@ export class MainMenuScreen {
     this.menu = new Menu([
       { label: 'New Game',  key: 'n' },
       { label: 'Continue',  key: 'c' },
+      { label: 'Settings',  key: 'o' },
       { label: 'Quit',      key: 'q' },
     ]);
 
@@ -80,6 +81,9 @@ export class MainMenuScreen {
         break;
       case 'c':
         this.game.loadGame();
+        break;
+      case 'o':
+        this.game.openSettings();
         break;
       case 'q':
         // Attempt to close the window / notify user
