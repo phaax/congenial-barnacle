@@ -67,6 +67,7 @@ export const STATE = {
   INN:              'INN',
   GAME_OVER:        'GAME_OVER',
   VICTORY:          'VICTORY',
+  JUKEBOX:          'JUKEBOX',    // Music player overlay
 };
 
 // Location types

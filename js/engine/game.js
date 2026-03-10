@@ -2,6 +2,7 @@ import { Renderer } from './renderer.js';
 import { InputManager, KEY } from './input.js';
 import { RNG } from './rng.js';
 import { STATE, C, COLS, ROWS, MSG_ROWS, VIEW_ROWS, MAIN_COLS } from '../data/constants.js';
+import { MusicManager } from '../audio/musicManager.js';
 import { generateWorld, updateFog, getBiomeAt, getLocationAt, getTownLayout, getDungeonLayout } from '../world/worldgen.js';
 import { generateQuests, onMonsterKilled, onItemPickedUp, onLocationVisited, checkGoalProgress } from '../systems/quest.js';
 import { getRace } from '../data/races.js';
@@ -27,6 +28,10 @@ export class Game {
     this.messages = [];
     this.combat   = null;
     this.dialogSession = null;
+
+    this.music = new MusicManager();
+    this._jukeboxPrevState = null;  // state to return to when jukebox closes
+    this._jukeboxPrevData  = null;  // data to pass back on jukebox close
 
     this.currentLocation = null;
     this.currentLayout   = null;
@@ -64,6 +69,7 @@ export class Game {
       { ShopScreen },
       { GameOverScreen },
       { VictoryScreen },
+      { JukeboxScreen },
     ] = await Promise.all([
       import('../ui/screens/mainmenu.js'),
       import('../ui/screens/charCreate.js'),
@@ -77,6 +83,7 @@ export class Game {
       import('../ui/screens/shopScreen.js'),
       import('../ui/screens/gameover.js'),
       import('../ui/screens/victory.js'),
+      import('../ui/screens/jukebox.js'),
     ]);
 
     this.screens = {
@@ -92,6 +99,7 @@ export class Game {
       [STATE.SHOP]:       new ShopScreen(this),
       [STATE.GAME_OVER]:  new GameOverScreen(this),
       [STATE.VICTORY]:    new VictoryScreen(this),
+      [STATE.JUKEBOX]:    new JukeboxScreen(this),
     };
 
     // Hide loading overlay
@@ -123,18 +131,61 @@ export class Game {
     this.currentState = stateName;
     const next = this.screens[stateName];
     if (next) {
-      // Set up input handlers
+      // Set up input handlers — global [J] key opens Jukebox from any state
       this.input.setHandlers({
-        key:    (e) => next.handleKey(e),
-        click:  (col, row, btn) => next.handleClick(col, row, btn),
+        key: (e) => {
+          // First user gesture: init music
+          this.music.initOnUserGesture();
+          // [J] opens jukebox from any non-jukebox state
+          if ((e.key === 'j' || e.key === 'J') && stateName !== STATE.JUKEBOX) {
+            e.preventDefault();
+            this.openJukebox(data);
+            return;
+          }
+          // [M] toggles mute globally
+          if (e.key === 'm' || e.key === 'M') {
+            if (stateName !== STATE.JUKEBOX) {
+              e.preventDefault();
+              this.music.toggleMute();
+              return;
+            }
+          }
+          next.handleKey(e);
+        },
+        click:  (col, row, btn) => {
+          this.music.initOnUserGesture();
+          next.handleClick(col, row, btn);
+        },
         scroll: (dir) => next.handleScroll(dir),
         move:   (col, row) => next.handleMove?.(col, row),
       });
       next.enter(data);
     }
 
+    // Trigger music for new state (skip jukebox — it manages its own music)
+    if (stateName !== STATE.JUKEBOX) {
+      this.music.onStateChange(stateName, data);
+    }
+
     // Force full re-render
     this.renderer.clear();
+  }
+
+  // ── Jukebox ───────────────────────────────────────────────────────────────
+
+  openJukebox(fromData = null) {
+    if (this.currentState === STATE.JUKEBOX) return;
+    this._jukeboxPrevState = this.currentState;
+    this._jukeboxPrevData  = fromData;
+    this._doChangeState(STATE.JUKEBOX, null);
+  }
+
+  closeJukebox() {
+    const prev     = this._jukeboxPrevState || STATE.MAIN_MENU;
+    const prevData = this._jukeboxPrevData;
+    this._jukeboxPrevState = null;
+    this._jukeboxPrevData  = null;
+    this._doChangeState(prev, prevData);
   }
 
   _loop(timestamp) {
@@ -561,6 +612,11 @@ export class Game {
 
     // Keys hint
     renderer.write(col + 1, VIEW_ROWS - 2, '[I]nv [Q]uests', C.DARK_GRAY, C.BLACK);
+
+    // Music status
+    const musicNote = this.music.muted ? '♪OFF' : '♪';
+    const musicFg   = this.music.muted ? C.DARK_GRAY : C.DARK_CYAN;
+    renderer.write(col + 1, VIEW_ROWS - 1, `[J]Box ${musicNote}`, musicFg, C.BLACK);
   }
 
   // Random encounter check
