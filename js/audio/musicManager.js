@@ -1,37 +1,33 @@
 /**
  * MusicManager — wraps the webAdPlug ScriptNodePlayer to provide
- * context-aware .RAD music playback for Chronicles of the Realm.
+ * context-aware OPL2 music playback for Chronicles of the Realm.
  *
  * Depends on (loaded as classic <script> tags before this module):
  *   lib/scriptprocessor_player.js  — ScriptNodePlayer
  *   lib/backend_adplug.js          — AdPlugBackendAdapter + compiled OPL engine
+ *
+ * Track formats:
+ *   worldmap.rad — "Alloyrun" by VOID/Reality, RAD v1.0
+ *   *.imf        — Original OPL2 compositions, Apogee IMF format (560 Hz)
  */
 
 import { STATE } from '../data/constants.js';
 
 // Track definitions: logical name → file path + metadata shown in the Jukebox
-// Track sources:
-//   "Alloyrun" — by VOID/REALITY (OPL2 C64 cover, freely redistributable with credit)
-// Credit: VOID (Robert Muller) / Reality Productions
-//
-// Note: The original Dystopia and Pachelbel's Canon tracks were RAD v2.1 format,
-// which is not supported by this build of the AdPlug library (RAD v1.0 only).
-// All tracks currently use the Alloyrun RAD v1.0 file.
-
 export const TRACKS = {
   menu: {
-    file: 'assets/music/menu.rad',
-    title: 'Alloyrun',
-    composer: 'VOID / Reality',
+    file: 'assets/music/menu.imf',
+    title: 'The Realm Awaits',
+    composer: 'Original',
     context: 'Main Menu',
-    mood: 'Energetic, adventurous',
+    mood: 'Regal, majestic (G major)',
   },
   charcreate: {
-    file: 'assets/music/charcreate.rad',
-    title: 'Alloyrun',
-    composer: 'VOID / Reality',
+    file: 'assets/music/charcreate.imf',
+    title: 'A Hero Is Born',
+    composer: 'Original',
     context: 'Character Creation',
-    mood: 'Energetic, adventurous',
+    mood: 'Mysterious, contemplative (A minor)',
   },
   worldmap: {
     file: 'assets/music/worldmap.rad',
@@ -41,46 +37,46 @@ export const TRACKS = {
     mood: 'Energetic, adventurous',
   },
   town: {
-    file: 'assets/music/town.rad',
-    title: 'Alloyrun',
-    composer: 'VOID / Reality',
+    file: 'assets/music/town.imf',
+    title: 'Market Day',
+    composer: 'Original',
     context: 'Town / Shop',
-    mood: 'Energetic, adventurous',
+    mood: 'Cheerful, upbeat (C major)',
   },
   tavern: {
-    file: 'assets/music/tavern.rad',
-    title: 'Alloyrun',
-    composer: 'VOID / Reality',
+    file: 'assets/music/tavern.imf',
+    title: 'The Wandering Minstrel',
+    composer: 'Original',
     context: 'Inn / Tavern',
-    mood: 'Energetic, adventurous',
+    mood: 'Lively jig (G major)',
   },
   dungeon: {
-    file: 'assets/music/dungeon.rad',
-    title: 'Alloyrun',
-    composer: 'VOID / Reality',
+    file: 'assets/music/dungeon.imf',
+    title: 'Depths of Darkness',
+    composer: 'Original',
     context: 'Dungeon / Cave / Ruins',
-    mood: 'Energetic, adventurous',
+    mood: 'Dark, ominous (D minor)',
   },
   combat: {
-    file: 'assets/music/combat.rad',
-    title: 'Alloyrun',
-    composer: 'VOID / Reality',
+    file: 'assets/music/combat.imf',
+    title: 'Steel and Shadow',
+    composer: 'Original',
     context: 'Combat',
-    mood: 'Energetic, adventurous',
+    mood: 'Aggressive, driving (E minor)',
   },
   gameover: {
-    file: 'assets/music/gameover.rad',
-    title: 'Alloyrun',
-    composer: 'VOID / Reality',
+    file: 'assets/music/gameover.imf',
+    title: 'Fallen',
+    composer: 'Original',
     context: 'Game Over',
-    mood: 'Energetic, adventurous',
+    mood: 'Somber, melancholic (C minor)',
   },
   victory: {
-    file: 'assets/music/victory.rad',
-    title: 'Alloyrun',
-    composer: 'VOID / Reality',
+    file: 'assets/music/victory.imf',
+    title: 'Triumph of the Realm',
+    composer: 'Original',
     context: 'Victory',
-    mood: 'Energetic, adventurous',
+    mood: 'Triumphant fanfare (C major)',
   },
 };
 
