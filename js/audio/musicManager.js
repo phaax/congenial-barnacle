@@ -117,8 +117,9 @@ function resolveTrack(state, data) {
   }
 }
 
-const LS_MUTED  = 'chronicles_music_muted';
-const LS_VOLUME = 'chronicles_music_volume';
+const LS_MUTED   = 'chronicles_music_muted';
+const LS_VOLUME  = 'chronicles_music_volume';
+const LS_ENABLED = 'chronicles_music_enabled';
 
 export class MusicManager {
   constructor() {
@@ -128,6 +129,7 @@ export class MusicManager {
     this._loading     = null;    // track key being loaded
     this._muted       = false;
     this._volume      = 0.7;
+    this._enabled     = true;    // in-game music enabled (jukebox ignores this)
     this._songInfo    = {};      // metadata from AdPlug for current track
     this._onInfoUpdate = null;   // optional callback when song info updates
 
@@ -137,6 +139,8 @@ export class MusicManager {
       if (m !== null) this._muted = (m === 'true');
       const v = parseFloat(localStorage.getItem(LS_VOLUME));
       if (!isNaN(v)) this._volume = Math.max(0, Math.min(1, v));
+      const e = localStorage.getItem(LS_ENABLED);
+      if (e !== null) this._enabled = (e !== 'false');
     } catch (_) {}
   }
 
@@ -177,6 +181,8 @@ export class MusicManager {
     this._initializing = false;
     const p = ScriptNodePlayer.getInstance();
     p.setVolume(this._muted ? 0 : this._volume);
+    // Center-pan the OPL output so it plays equally from both speakers
+    if (typeof p.setPanning === 'function') p.setPanning(0);
     if (this._pending) {
       const key = this._pending;
       this._pending = null;
@@ -270,8 +276,15 @@ export class MusicManager {
 
   get muted()  { return this._muted; }
   get volume() { return this._volume; }
+  get enabled() { return this._enabled; }
   get currentTrack() { return this._current; }
   get songInfo() { return this._songInfo; }
+
+  setEnabled(val) {
+    this._enabled = !!val;
+    try { localStorage.setItem(LS_ENABLED, String(this._enabled)); } catch (_) {}
+    if (!this._enabled) this.stop();
+  }
 
   toggleMute() {
     this.setMuted(!this._muted);
@@ -301,6 +314,7 @@ export class MusicManager {
    * Resolves the correct track for the new state and starts playback.
    */
   onStateChange(newState, data) {
+    if (!this._enabled) return; // in-game music disabled
     if (OVERLAY_STATES.has(newState)) return; // keep current track
 
     // For dialog, pass the current track as the inherit hint

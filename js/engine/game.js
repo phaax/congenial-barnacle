@@ -30,8 +30,10 @@ export class Game {
     this.dialogSession = null;
 
     this.music = new MusicManager();
-    this._jukeboxPrevState = null;  // state to return to when jukebox closes
-    this._jukeboxPrevData  = null;  // data to pass back on jukebox close
+    this._jukeboxPrevState  = null;  // state to return to when jukebox closes
+    this._jukeboxPrevData   = null;  // data to pass back on jukebox close
+    this._settingsPrevState = null;
+    this._settingsPrevData  = null;
 
     this.currentLocation = null;
     this.currentLayout   = null;
@@ -70,6 +72,7 @@ export class Game {
       { GameOverScreen },
       { VictoryScreen },
       { JukeboxScreen },
+      { SettingsScreen },
     ] = await Promise.all([
       import('../ui/screens/mainmenu.js'),
       import('../ui/screens/charCreate.js'),
@@ -84,6 +87,7 @@ export class Game {
       import('../ui/screens/gameover.js'),
       import('../ui/screens/victory.js'),
       import('../ui/screens/jukebox.js'),
+      import('../ui/screens/settings.js'),
     ]);
 
     this.screens = {
@@ -100,6 +104,7 @@ export class Game {
       [STATE.GAME_OVER]:  new GameOverScreen(this),
       [STATE.VICTORY]:    new VictoryScreen(this),
       [STATE.JUKEBOX]:    new JukeboxScreen(this),
+      [STATE.SETTINGS]:   new SettingsScreen(this),
     };
 
     // Hide loading overlay
@@ -136,15 +141,15 @@ export class Game {
         key: (e) => {
           // First user gesture: init music
           this.music.initOnUserGesture();
-          // [J] opens jukebox from any non-jukebox state
-          if ((e.key === 'j' || e.key === 'J') && stateName !== STATE.JUKEBOX) {
+          // [J] opens jukebox from any non-overlay state
+          if ((e.key === 'j' || e.key === 'J') && stateName !== STATE.JUKEBOX && stateName !== STATE.SETTINGS) {
             e.preventDefault();
             this.openJukebox(data);
             return;
           }
           // [M] toggles mute globally
           if (e.key === 'm' || e.key === 'M') {
-            if (stateName !== STATE.JUKEBOX) {
+            if (stateName !== STATE.JUKEBOX && stateName !== STATE.SETTINGS) {
               e.preventDefault();
               this.music.toggleMute();
               return;
@@ -162,8 +167,8 @@ export class Game {
       next.enter(data);
     }
 
-    // Trigger music for new state (skip jukebox — it manages its own music)
-    if (stateName !== STATE.JUKEBOX) {
+    // Trigger music for new state (skip overlay screens)
+    if (stateName !== STATE.JUKEBOX && stateName !== STATE.SETTINGS) {
       this.music.onStateChange(stateName, data);
     }
 
@@ -185,6 +190,23 @@ export class Game {
     const prevData = this._jukeboxPrevData;
     this._jukeboxPrevState = null;
     this._jukeboxPrevData  = null;
+    this._doChangeState(prev, prevData);
+  }
+
+  // ── Settings ─────────────────────────────────────────────────────────────
+
+  openSettings(fromData = null) {
+    if (this.currentState === STATE.SETTINGS) return;
+    this._settingsPrevState = this.currentState;
+    this._settingsPrevData  = fromData;
+    this._doChangeState(STATE.SETTINGS, null);
+  }
+
+  closeSettings() {
+    const prev     = this._settingsPrevState || STATE.MAIN_MENU;
+    const prevData = this._settingsPrevData;
+    this._settingsPrevState = null;
+    this._settingsPrevData  = null;
     this._doChangeState(prev, prevData);
   }
 
@@ -614,8 +636,9 @@ export class Game {
     renderer.write(col + 1, VIEW_ROWS - 2, '[I]nv [Q]uests', C.DARK_GRAY, C.BLACK);
 
     // Music status
-    const musicNote = this.music.muted ? '♪OFF' : '♪';
-    const musicFg   = this.music.muted ? C.DARK_GRAY : C.DARK_CYAN;
+    const musicOff = !this.music.enabled || this.music.muted;
+    const musicNote = musicOff ? '♪OFF' : '♪';
+    const musicFg   = musicOff ? C.DARK_GRAY : C.DARK_CYAN;
     renderer.write(col + 1, VIEW_ROWS - 1, `[J]Box ${musicNote}`, musicFg, C.BLACK);
   }
 
