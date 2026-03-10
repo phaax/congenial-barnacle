@@ -12,24 +12,26 @@ import { STATE } from '../data/constants.js';
 // Track definitions: logical name → file path + metadata shown in the Jukebox
 // Track sources:
 //   "Alloyrun" — by VOID/REALITY (OPL2 C64 cover, freely redistributable with credit)
-//   "Dystopia" — by VOID/REALITY, April 2018 (freely redistributable with credit)
-//   "Pachelbel's Canon in D" — RAD V2 MIDI version by Shayde/Reality, 2018
-// Credit: VOID (Robert Muller) & Shayde / Reality Productions
+// Credit: VOID (Robert Muller) / Reality Productions
+//
+// Note: The original Dystopia and Pachelbel's Canon tracks were RAD v2.1 format,
+// which is not supported by this build of the AdPlug library (RAD v1.0 only).
+// All tracks currently use the Alloyrun RAD v1.0 file.
 
 export const TRACKS = {
   menu: {
     file: 'assets/music/menu.rad',
-    title: "Pachelbel's Canon in D",
-    composer: 'Shayde / Reality',
+    title: 'Alloyrun',
+    composer: 'VOID / Reality',
     context: 'Main Menu',
-    mood: 'Classical, stately',
+    mood: 'Energetic, adventurous',
   },
   charcreate: {
     file: 'assets/music/charcreate.rad',
-    title: "Pachelbel's Canon in D",
-    composer: 'Shayde / Reality',
+    title: 'Alloyrun',
+    composer: 'VOID / Reality',
     context: 'Character Creation',
-    mood: 'Contemplative, refined',
+    mood: 'Energetic, adventurous',
   },
   worldmap: {
     file: 'assets/music/worldmap.rad',
@@ -40,45 +42,45 @@ export const TRACKS = {
   },
   town: {
     file: 'assets/music/town.rad',
-    title: "Pachelbel's Canon in D",
-    composer: 'Shayde / Reality',
+    title: 'Alloyrun',
+    composer: 'VOID / Reality',
     context: 'Town / Shop',
-    mood: 'Warm, classical melody',
+    mood: 'Energetic, adventurous',
   },
   tavern: {
     file: 'assets/music/tavern.rad',
-    title: "Pachelbel's Canon in D",
-    composer: 'Shayde / Reality',
+    title: 'Alloyrun',
+    composer: 'VOID / Reality',
     context: 'Inn / Tavern',
-    mood: 'Cozy, unhurried',
+    mood: 'Energetic, adventurous',
   },
   dungeon: {
     file: 'assets/music/dungeon.rad',
-    title: 'Dystopia',
+    title: 'Alloyrun',
     composer: 'VOID / Reality',
     context: 'Dungeon / Cave / Ruins',
-    mood: 'Dark, tense, industrial',
+    mood: 'Energetic, adventurous',
   },
   combat: {
     file: 'assets/music/combat.rad',
     title: 'Alloyrun',
     composer: 'VOID / Reality',
     context: 'Combat',
-    mood: 'Driving, relentless',
+    mood: 'Energetic, adventurous',
   },
   gameover: {
     file: 'assets/music/gameover.rad',
-    title: 'Dystopia',
+    title: 'Alloyrun',
     composer: 'VOID / Reality',
     context: 'Game Over',
-    mood: 'Bleak, atmospheric',
+    mood: 'Energetic, adventurous',
   },
   victory: {
     file: 'assets/music/victory.rad',
     title: 'Alloyrun',
     composer: 'VOID / Reality',
     context: 'Victory',
-    mood: 'Triumphant, high-energy',
+    mood: 'Energetic, adventurous',
   },
 };
 
