@@ -394,7 +394,6 @@ export class CharCreateScreen {
 
   _renderFrame(renderer) {
     renderer.drawBox(0, 0, COLS, ROWS, C.DARK_BLUE, C.BLACK, 'double', false);
-    renderer.writeCenter(0, ' CHARACTER CREATION ', C.YELLOW, C.BLACK);
 
     // Divider between main and stats panel
     for (let r = 1; r < ROWS - 1; r++) {
@@ -402,6 +401,9 @@ export class CharCreateScreen {
     }
     renderer.set(42, 0,       '╦', C.DARK_BLUE, C.BLACK);
     renderer.set(42, ROWS - 1,'╩', C.DARK_BLUE, C.BLACK);
+
+    // Draw title last so it overlays the divider junction
+    renderer.writeCenter(0, ' CHARACTER CREATION ', C.YELLOW, C.BLACK);
   }
 
   _renderProgress(renderer) {
@@ -573,10 +575,13 @@ export class CharCreateScreen {
     renderer.write(2, r,   'Background: ', C.DARK_GRAY, C.BLACK);
     renderer.write(14, r,  bg.name, C.WHITE, C.BLACK);
     r++;
-    renderer.write(2, r,   'Skills:     ', C.DARK_GRAY, C.BLACK);
-    const skillsStr = this.selectedSkills.join(', ') || '(none)';
-    renderer.write(14, r, skillsStr.slice(0, 27), C.GREEN, C.BLACK);
-    r += 2;
+    renderer.write(2, r, 'Skills:', C.DARK_GRAY, C.BLACK);
+    const skillNames = this.selectedSkills.map(id => {
+      const sk = SKILLS.find(s => s.id === id);
+      return sk ? sk.name : id;
+    }).join(', ') || '(none)';
+    const skillLines = this._wrapWrite(renderer, 14, r, skillNames, 27, C.GREEN, C.BLACK);
+    r += skillLines + 1;
 
     renderer.write(2, r, 'Stats:', C.YELLOW, C.BLACK);
     r++;
@@ -675,7 +680,7 @@ export class CharCreateScreen {
       r++;
       renderer.write(px, r, 'LORE:', C.DARK_GRAY, C.BLACK);
       r++;
-      this._wrapWrite(renderer, px, r, bg.lore, 34, C.DARK_GRAY, C.BLACK);
+      this._wrapWrite(renderer, px, r, bg.lore, 34, C.DARK_GRAY, C.BLACK, ROWS - 4 - r);
     }
   }
 

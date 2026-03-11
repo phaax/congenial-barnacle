@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { C, COLS, ROWS, STATE, MAIN_COLS } from '../../data/constants';
 import { QUEST_STATUS } from '../../data/quests';
+import { getItem } from '../../data/items';
 import { ScrollList } from '../menu';
 
 export class QuestLogScreen {
@@ -174,7 +175,9 @@ export class QuestLogScreen {
         if (q.reward.xp)   renderer.write(44, row++, `${q.reward.xp} XP`,   C.CYAN,   C.BLACK);
         for (const item of (q.reward.items || [])) {
           if (row > 26) break;
-          renderer.write(44, row++, item.name || item.id, C.WHITE, C.BLACK);
+          const itemDef = getItem(item.id);
+          const itemLabel = (itemDef?.name || item.id) + (item.qty > 1 ? ` x${item.qty}` : '');
+          renderer.write(44, row++, itemLabel, C.WHITE, C.BLACK);
         }
       }
     }
