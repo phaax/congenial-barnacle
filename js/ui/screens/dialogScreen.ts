@@ -188,6 +188,11 @@ export class DialogScreen {
 
   handleKey(e) {
     if (this._questMode && this._questMenu) {
+      if (e.key === 'Escape') {
+        this._questMode = false;
+        this.game.changeState(this.prevState);
+        return;
+      }
       this._questMenu.handleKey(e);
       return;
     }
@@ -229,28 +234,27 @@ export class DialogScreen {
     // Dialog box
     renderer.drawPanel(0, 14, COLS, 12, npc.name, C.WHITE, C.BLACK, 'double');
 
-    // NPC portrait
-    const portraitLines = NPC_PORTRAITS[npc.type || 'villager'] || NPC_PORTRAITS.villager;
-    for (let i = 0; i < portraitLines.length; i++) {
-      renderer.write(2, 15 + i, portraitLines[i], C.CYAN, C.BLACK);
-    }
+    // NPC portrait and dialog text — only when not showing quest menu
+    if (!this._questMode) {
+      const portraitLines = NPC_PORTRAITS[npc.type || 'villager'] || NPC_PORTRAITS.villager;
+      for (let i = 0; i < portraitLines.length; i++) {
+        renderer.write(2, 15 + i, portraitLines[i], C.CYAN, C.BLACK);
+      }
 
-    // NPC name
-    renderer.write(12, 15, npc.name, C.YELLOW, C.BLACK);
-    renderer.write(12, 16, `(${NPC_ROLE_LABELS[npc.type] || npc.type || 'Villager'})`, C.DARK_GRAY, C.BLACK);
+      renderer.write(12, 15, npc.name, C.YELLOW, C.BLACK);
+      renderer.write(12, 16, `(${NPC_ROLE_LABELS[npc.type] || npc.type || 'Villager'})`, C.DARK_GRAY, C.BLACK);
 
-    // Dialog text (typewriter effect)
-    const text = this._getCurrentText();
-    const visible = text.slice(0, this._charIdx);
-    const maxW = COLS - 14;
-    const lines = wrapText(visible, maxW);
-    for (let i = 0; i < lines.length && i < 4; i++) {
-      renderer.write(12, 18 + i, lines[i], C.WHITE, C.BLACK);
-    }
+      const text = this._getCurrentText();
+      const visible = text.slice(0, this._charIdx);
+      const maxW = COLS - 14;
+      const lines = wrapText(visible, maxW);
+      for (let i = 0; i < lines.length && i < 4; i++) {
+        renderer.write(12, 18 + i, lines[i], C.WHITE, C.BLACK);
+      }
 
-    // Blink cursor when done typing
-    if (this._typeDone && this.game.blinkOn) {
-      renderer.write(12, 18 + Math.min(lines.length, 3), '▶', C.YELLOW, C.BLACK);
+      if (this._typeDone && this.game.blinkOn) {
+        renderer.write(12, 18 + Math.min(lines.length, 3), '▶', C.YELLOW, C.BLACK);
+      }
     }
 
     // Quest menu
