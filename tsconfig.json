@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    // Strict mode is the goal; tighten incrementally by enabling "strict": true
+    // and fixing errors per file as the codebase matures.
+    "strict": false,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "types": []
+  },
+  "include": ["js/**/*"]
+}
