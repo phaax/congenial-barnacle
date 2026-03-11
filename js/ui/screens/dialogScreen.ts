@@ -4,6 +4,18 @@ import { getLine } from '../../data/dialog';
 import { acceptQuest, getAvailableQuestsAt, turnInQuest } from '../../systems/quest';
 import { Menu } from '../menu';
 
+const NPC_ROLE_LABELS: Record<string, string> = {
+  quest_giver: 'Quest Giver',
+  story:       'Story Character',
+  innkeeper:   'Innkeeper',
+  barkeep:     'Bartender',
+  shopkeeper:  'Shopkeeper',
+  healer:      'Healer',
+  guard:       'Guard',
+  villager:    'Villager',
+  boss:        'Boss',
+};
+
 const NPC_PORTRAITS = {
   innkeeper:   ['  .---.  ', ' (  ͜  ) ', '  `---\'  ', ' [_|_|_] '],
   barkeep:     ['  .---. ', ' ( ͜ ͜ ) ', '  `---\' ', '  /|\\  '],
@@ -225,7 +237,7 @@ export class DialogScreen {
 
     // NPC name
     renderer.write(12, 15, npc.name, C.YELLOW, C.BLACK);
-    renderer.write(12, 16, `(${npc.type || 'villager'})`, C.DARK_GRAY, C.BLACK);
+    renderer.write(12, 16, `(${NPC_ROLE_LABELS[npc.type] || npc.type || 'Villager'})`, C.DARK_GRAY, C.BLACK);
 
     // Dialog text (typewriter effect)
     const text = this._getCurrentText();
@@ -247,7 +259,8 @@ export class DialogScreen {
       this._questMenu.render(renderer, 10, 14, { width: COLS - 20 });
     }
 
-    // Hint
+    // Hint — fill the full row first so panel border chars don't bleed through
+    renderer.fill(0, 25, COLS, 1, ' ', C.BLACK, C.BLACK);
     if (!this._questMode) {
       renderer.write(1, 25, 'Space/Enter: Continue  Escape: Close', C.DARK_GRAY, C.BLACK);
     }
@@ -259,7 +272,7 @@ export class DialogScreen {
     renderer.write(COLS / 2 - 2, 4, sym, npc.isBoss ? C.RED : C.YELLOW, C.BLACK);
     renderer.write(COLS / 2 - 1, 5, sym, npc.isBoss ? C.RED : C.YELLOW, C.BLACK);
     renderer.writeCenter(7, `"${npc.name}"`, C.LIGHT_GRAY, C.BLACK);
-    renderer.writeCenter(9, npc.type === 'story' ? '[ STORY CHARACTER ]' : `[ ${(npc.type || 'villager').toUpperCase()} ]`, C.DARK_CYAN, C.BLACK);
+    renderer.writeCenter(9, `[ ${(NPC_ROLE_LABELS[npc.type] || npc.type || 'Villager').toUpperCase()} ]`, C.DARK_CYAN, C.BLACK);
   }
 }
 
