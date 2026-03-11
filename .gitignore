@@ -1,1 +1,5 @@
 rad_files/
+node_modules/
+dist/
+playwright-report/
+test-results/
