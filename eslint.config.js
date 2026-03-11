@@ -16,6 +16,7 @@ export default [
     },
     rules: {
       ...tsPlugin.configs['recommended'].rules,
+      '@typescript-eslint/ban-ts-comment': ['error', { 'ts-nocheck': false }],
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
     },
