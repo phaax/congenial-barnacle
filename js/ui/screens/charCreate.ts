@@ -680,7 +680,7 @@ export class CharCreateScreen {
       r++;
       renderer.write(px, r, 'LORE:', C.DARK_GRAY, C.BLACK);
       r++;
-      this._wrapWrite(renderer, px, r, bg.lore, 34, C.DARK_GRAY, C.BLACK);
+      this._wrapWrite(renderer, px, r, bg.lore, 34, C.DARK_GRAY, C.BLACK, ROWS - 4 - r);
     }
   }
 
