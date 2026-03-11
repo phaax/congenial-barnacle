@@ -6,9 +6,8 @@
  *   lib/scriptprocessor_player.js  — ScriptNodePlayer
  *   lib/backend_adplug.js          — AdPlugBackendAdapter + compiled OPL engine
  *
- * Track formats:
- *   worldmap.rad — "Alloyrun" by VOID/Reality, RAD v1.0
- *   *.imf        — Original OPL2 compositions, Apogee IMF format (560 Hz)
+ * All tracks are RAD v1.0 format, played via the compiled AdPlug OPL2 engine.
+ * Sources: demoscene releases freely redistributable with credit.
  */
 
 import { STATE } from '../data/constants.js';
@@ -16,18 +15,18 @@ import { STATE } from '../data/constants.js';
 // Track definitions: logical name → file path + metadata shown in the Jukebox
 export const TRACKS = {
   menu: {
-    file: 'assets/music/menu.imf',
-    title: 'The Realm Awaits',
-    composer: 'Original',
+    file: 'assets/music/menu.rad',
+    title: 'Raster',
+    composer: 'VOID / Reality',
     context: 'Main Menu',
-    mood: 'Regal, majestic (G major)',
+    mood: 'Energetic demoscene intro',
   },
   charcreate: {
-    file: 'assets/music/charcreate.imf',
-    title: 'A Hero Is Born',
-    composer: 'Original',
+    file: 'assets/music/charcreate.rad',
+    title: 'Dreaming',
+    composer: 'Phandral / Sanxion',
     context: 'Character Creation',
-    mood: 'Mysterious, contemplative (A minor)',
+    mood: 'Atmospheric, contemplative',
   },
   worldmap: {
     file: 'assets/music/worldmap.rad',
@@ -37,46 +36,46 @@ export const TRACKS = {
     mood: 'Energetic, adventurous',
   },
   town: {
-    file: 'assets/music/town.imf',
-    title: 'Market Day',
-    composer: 'Original',
+    file: 'assets/music/town.rad',
+    title: 'Popcorn',
+    composer: 'Mads Orbesen Troest',
     context: 'Town / Shop',
-    mood: 'Cheerful, upbeat (C major)',
+    mood: 'Cheerful, upbeat',
   },
   tavern: {
-    file: 'assets/music/tavern.imf',
-    title: 'The Wandering Minstrel',
-    composer: 'Original',
+    file: 'assets/music/tavern.rad',
+    title: 'Hangover',
+    composer: 'VOID / Reality',
     context: 'Inn / Tavern',
-    mood: 'Lively jig (G major)',
+    mood: 'Lively, rhythmic',
   },
   dungeon: {
-    file: 'assets/music/dungeon.imf',
-    title: 'Depths of Darkness',
-    composer: 'Original',
+    file: 'assets/music/dungeon.rad',
+    title: 'Crystal 2',
+    composer: 'Chris Korte / Xography',
     context: 'Dungeon / Cave / Ruins',
-    mood: 'Dark, ominous (D minor)',
+    mood: 'Dark, atmospheric',
   },
   combat: {
-    file: 'assets/music/combat.imf',
-    title: 'Steel and Shadow',
-    composer: 'Original',
+    file: 'assets/music/combat.rad',
+    title: 'SkyChase',
+    composer: 'Phandral / Sanxion',
     context: 'Combat',
-    mood: 'Aggressive, driving (E minor)',
+    mood: 'Fast, intense',
   },
   gameover: {
-    file: 'assets/music/gameover.imf',
-    title: 'Fallen',
-    composer: 'Original',
+    file: 'assets/music/gameover.rad',
+    title: 'Rain',
+    composer: 'Phandral / Sanxion',
     context: 'Game Over',
-    mood: 'Somber, melancholic (C minor)',
+    mood: 'Slow, melancholic',
   },
   victory: {
-    file: 'assets/music/victory.imf',
-    title: 'Triumph of the Realm',
-    composer: 'Original',
+    file: 'assets/music/victory.rad',
+    title: 'Terrania',
+    composer: 'VOID / Reality',
     context: 'Victory',
-    mood: 'Triumphant fanfare (C major)',
+    mood: 'Triumphant, adventurous',
   },
 };
 
