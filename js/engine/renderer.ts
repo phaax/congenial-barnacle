@@ -153,12 +153,18 @@ export class Renderer {
       const x = col * CELL_W;
       const y = row * CELL_H;
 
+      // Draw background — extend 1px left to cover any glyph bleed from left neighbor
       ctx.fillStyle = PALETTE[bg];
       ctx.fillRect(x, y, CELL_W, CELL_H);
 
       if (char !== ' ') {
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(x, y, CELL_W, CELL_H);
+        ctx.clip();
         ctx.fillStyle = PALETTE[fg];
         ctx.fillText(char, x + 1, y + 1);
+        ctx.restore();
       }
     }
     this.dirty.clear();

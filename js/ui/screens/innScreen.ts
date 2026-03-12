@@ -97,6 +97,10 @@ export class InnScreen {
     const ox = Math.floor((COLS - W) / 2);
     const oy = Math.floor((ROWS - H) / 2);
 
+    // Extra fill for areas outside the panel to ensure no ghost chars persist
+    // (some box-drawing glyphs can visually bleed beyond cell boundaries)
+    renderer.fill(ox + W, 0, COLS - (ox + W), ROWS, ' ', C.BLACK, C.BLACK);
+
     renderer.drawPanel(ox, oy, W, H, 'INN', C.BROWN, C.BLACK, 'double');
 
     const innName = this.npc?.innName || 'The Wanderer\'s Rest';
