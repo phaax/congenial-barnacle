@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { C, COLS, ROWS, STATE } from '../../data/constants';
-import { getItem, getShopInventoryByRole } from '../../data/items';
+import { getItem, getShopInventoryByRole, addToInventory } from '../../data/items';
 import { ScrollList, Confirm } from '../menu';
 
 export class ShopScreen {
@@ -78,7 +78,7 @@ export class ShopScreen {
     const player = this.game.player;
     if (!player) return;
     player.gold -= item.value;
-    player.inventory.push({ id: item.id, qty: 1 });
+    addToInventory(player, item.id, 1);
     this._refreshSellList();
     this.message = `Bought ${item.name} for ${item.value}g.`;
     this.messageColor = C.GREEN;
@@ -96,15 +96,19 @@ export class ShopScreen {
     const item = getItem(invItem.id);
     if (!item) return;
 
-    if (this._isEquipped(invItem)) {
+    const equipped = this._isEquipped(invItem);
+    const sellableQty = invItem.qty - (equipped ? 1 : 0);
+
+    if (sellableQty <= 0) {
       this.message = `Unequip ${item.name} before selling it.`;
       this.messageColor = C.RED;
       return;
     }
 
     const price = Math.max(1, Math.floor(item.value * 0.5));
+    const label = sellableQty > 1 ? `Sell 1x ${item.name} for ${price}g?` : `Sell ${item.name} for ${price}g?`;
     this._confirm = new Confirm(
-      `Sell ${item.name} for ${price}g?`,
+      label,
       () => { this._executeSell(invItem, item, price); this._confirm = null; },
       () => { this._confirm = null; }
     );
@@ -247,13 +251,16 @@ export class ShopScreen {
       renderItem: (r, col, row, entry, isSel, width, fg, bg) => {
         const item = this.mode === 'buy' ? entry : getItem(entry.id);
         if (!item) return;
-        const equipped   = this.mode === 'sell' && this._isEquipped(entry);
-        const price      = this.mode === 'buy' ? item.value : Math.max(1, Math.floor(item.value * 0.5));
-        const priceStr   = `${price}g`.padStart(6);
-        const equip      = equipped ? '[E]' : '   ';
-        const name       = item.name.slice(0, width - 11).padEnd(width - 11);
-        const itemFg     = equipped ? C.DARK_GRAY : fg;
-        r.write(col, row, `${equip}${name}${priceStr}`, itemFg, bg);
+        const equipped     = this.mode === 'sell' && this._isEquipped(entry);
+        const sellableQty  = this.mode === 'sell' ? (entry.qty - (equipped ? 1 : 0)) : null;
+        const unavailable  = this.mode === 'sell' && equipped && sellableQty <= 0;
+        const price        = this.mode === 'buy' ? item.value : Math.max(1, Math.floor(item.value * 0.5));
+        const priceStr     = unavailable ? ' (eq)' : `${price}g`.padStart(6);
+        const qtyStr       = this.mode === 'sell' && entry.qty > 1 ? ` x${sellableQty}` : '';
+        const nameWidth    = width - 11 - qtyStr.length;
+        const name         = item.name.slice(0, nameWidth).padEnd(nameWidth);
+        const itemFg       = unavailable ? C.DARK_GRAY : fg;
+        r.write(col, row, `   ${name}${qtyStr}${priceStr}`, itemFg, bg);
       }
     });
 

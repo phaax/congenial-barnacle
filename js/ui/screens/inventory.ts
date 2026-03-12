@@ -22,7 +22,7 @@ export class InventoryScreen {
 
   _refreshList() {
     const inv = this.game.player?.inventory || [];
-    this.list.setItems(inv, 18);
+    this.list.setItems(inv, 16);
     this.list.onSelect = (i, inv_item) => {
       this.selected = inv_item;
     };
@@ -52,7 +52,7 @@ export class InventoryScreen {
 
   handleClick(col, row, button) {
     // Inventory list renders at col 1, row 9, visibleH 18
-    if (col < 40 && row >= 9 && row < 27) {
+    if (col < 40 && row >= 9 && row < 25) {
       this.list.handleClick(col, row, 1, 9, 37);
       this.selected = this.game.player?.inventory[this.list.selected] || null;
     }

@@ -68,6 +68,7 @@ export const ITEMS = [
   { id:'dragon_heart',   name:'Dragon Heart',   type:ITEM_TYPE.QUEST, value:0, weight:2, symbol:'♥', fg:12, desc:'Still beating faintly.', tier:5 },
   { id:'phylactery',     name:'Phylactery',     type:ITEM_TYPE.QUEST, value:0, weight:1, symbol:'*', fg:13, desc:'The source of the Lich\'s immortality.', tier:5 },
   { id:'demon_core',     name:'Demon Core',     type:ITEM_TYPE.QUEST, value:0, weight:2, symbol:'*', fg:12, desc:'The imprisoned essence of a demon lord.', tier:5 },
+  { id:'letter',         name:'Sealed Letter',  type:ITEM_TYPE.QUEST, value:0, weight:0, symbol:'≡', fg:7,  desc:'A sealed letter entrusted to you for delivery.', tier:1 },
   { id:'ectoplasm',      name:'Ectoplasm',      type:ITEM_TYPE.MISC, value:8, weight:0, symbol:'o', fg:11, desc:'Ghostly residue.', tier:2 },
   { id:'large_gem',      name:'Large Gem',      type:ITEM_TYPE.MISC, value:100, weight:1, symbol:'♦', fg:14, desc:'A flawless gemstone.', tier:3 },
   { id:'stolen_coin',    name:'Stolen Coin',    type:ITEM_TYPE.MISC, value:3, weight:0, symbol:'$', fg:14, desc:'Poorly minted.', tier:1 },
@@ -121,5 +122,20 @@ export function getShopInventoryByRole(role, tier) {
     ids.push(...(tiers[t] || []));
   }
   return ids.map(id => getItem(id)).filter(Boolean);
+}
+
+// Add an item to the player's inventory, stacking if the item is stackable.
+// Consumables and items with stackable:true always merge with existing stacks.
+// Equipment and unique items always get their own slot.
+export function addToInventory(player, itemId, qty = 1) {
+  const item = getItem(itemId);
+  const isStackable = item?.stackable || item?.type === 'consumable';
+  if (isStackable) {
+    const existing = player.inventory.find(i => i.id === itemId);
+    if (existing) { existing.qty += qty; return; }
+  }
+  if (player.inventory.length < 20) {
+    player.inventory.push({ id: itemId, qty });
+  }
 }
 

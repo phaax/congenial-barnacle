@@ -551,7 +551,7 @@ export class Game {
   // ─── Helpers ─────────────────────────────────────────────────────────────────
 
   renderMessageLog(renderer) {
-    const msgs = this.getRecentMessages(MSG_ROWS);
+    const msgs = this.getRecentMessages(MSG_ROWS - 1);
     const catColors = {
       normal:  C.LIGHT_GRAY,
       combat:  C.RED,

@@ -22,6 +22,14 @@ export const TOWN_TILES = {
   [LOC_TILE.ALTAR]:   { char: '†', fg: C.CYAN,       bg: C.BLACK },
   [LOC_TILE.STAIRS_DOWN]: { char: '>', fg: C.WHITE,  bg: C.BLACK },
   [LOC_TILE.STAIRS_UP]:   { char: '<', fg: C.WHITE,  bg: C.BLACK },
+  // Building-specific wall variants
+  [LOC_TILE.WALL_INN]:        { char: '▒', fg: C.CYAN,       bg: C.BLACK },
+  [LOC_TILE.WALL_SHOP]:       { char: '#', fg: C.YELLOW,     bg: C.BLACK },
+  [LOC_TILE.WALL_BLACKSMITH]: { char: '▓', fg: C.DARK_RED,   bg: C.BLACK },
+  [LOC_TILE.WALL_HEALER]:     { char: '░', fg: C.GREEN,      bg: C.BLACK },
+  [LOC_TILE.WALL_TAVERN]:     { char: '▒', fg: C.BROWN,      bg: C.BLACK },
+  [LOC_TILE.WALL_GUILD]:      { char: '#', fg: C.MAGENTA,    bg: C.BLACK },
+  [LOC_TILE.WALL_TEMPLE]:     { char: '╬', fg: C.WHITE,      bg: C.BLACK },
 };
 
 function makeTownGrid() {
@@ -65,19 +73,19 @@ export function findWalkableNear(grid, startX, startY, occupied = new Set()) {
   return null;
 }
 
-function drawBuilding(grid, x, y, w, h) {
+function drawBuilding(grid, x, y, w, h, wallTile = LOC_TILE.WALL) {
   // Walls
   for (let dx = 0; dx < w; dx++) {
-    setTile(grid, x + dx, y, LOC_TILE.WALL);
-    setTile(grid, x + dx, y + h - 1, LOC_TILE.WALL);
+    setTile(grid, x + dx, y, wallTile);
+    setTile(grid, x + dx, y + h - 1, wallTile);
   }
   for (let dy = 0; dy < h; dy++) {
-    setTile(grid, x, y + dy, LOC_TILE.WALL);
-    setTile(grid, x + w - 1, y + dy, LOC_TILE.WALL);
+    setTile(grid, x, y + dy, wallTile);
+    setTile(grid, x + w - 1, y + dy, wallTile);
   }
   // Floor
   fillRect(grid, x + 1, y + 1, w - 2, h - 2, LOC_TILE.FLOOR);
-  // Door in bottom-center
+  // Door in bottom-center (always standard door tile)
   const doorX = x + Math.floor(w / 2);
   setTile(grid, doorX, y + h - 1, LOC_TILE.DOOR);
   return { doorX, doorY: y + h - 1 };
@@ -141,7 +149,17 @@ export function generateTown(rng, loc) {
       // If building doesn't fit in remaining space of this quadrant, stop here
       // and let the next quadrant try this building (don't advance queueIdx)
       if (curX + bdef.w >= TW - 2 || curY + bdef.h >= TH - 2) break;
-      const door = drawBuilding(grid, curX, curY, bdef.w, bdef.h);
+      const buildingWalls = {
+        inn:        LOC_TILE.WALL_INN,
+        shop:       LOC_TILE.WALL_SHOP,
+        blacksmith: LOC_TILE.WALL_BLACKSMITH,
+        healer:     LOC_TILE.WALL_HEALER,
+        tavern:     LOC_TILE.WALL_TAVERN,
+        guild:      LOC_TILE.WALL_GUILD,
+        temple:     LOC_TILE.WALL_TEMPLE,
+        house:      LOC_TILE.WALL,
+      };
+      const door = drawBuilding(grid, curX, curY, bdef.w, bdef.h, buildingWalls[bdef.label] ?? LOC_TILE.WALL);
       buildings.push({ ...bdef, x: curX, y: curY, doorX: door.doorX, doorY: door.doorY });
       // Clear path in front of door so it's always accessible
       for (let step = 1; step <= 3; step++) {

@@ -3,7 +3,7 @@ import { C, COLS, ROWS, MAIN_COLS, VIEW_ROWS, STATE, LOC_TYPE, LOC_TILE } from '
 import { TOWN_TILES } from '../../world/towngen';
 import { DUNGEON_TILES, isEncounterZone, getEncounterRate } from '../../world/dungeogen';
 import { Menu } from '../menu';
-import { getItem } from '../../data/items';
+import { getItem, addToInventory } from '../../data/items';
 import { spawnMonster } from '../../systems/combat';
 
 const VIEW_W = MAIN_COLS;   // 60
@@ -271,8 +271,8 @@ export class LocationScreen {
       if (loot.id === 'gold') continue;
       if (rng.chance(loot.chance / (chest.tier + 1))) {
         const item = getItem(loot.id);
-        if (item && this.game.player.inventory.length < 20) {
-          this.game.player.inventory.push({ id: loot.id, qty: 1 });
+        if (item) {
+          addToInventory(this.game.player, loot.id, 1);
           this.game.addMessage(`You find a ${item.name}!`, 'loot');
           found = true;
         }
@@ -319,8 +319,31 @@ export class LocationScreen {
       if (sc < 0 || sc >= VIEW_W || sr < 0 || sr >= VIEW_H) continue;
       if (npc.defeated) continue;
 
-      let sym = npc.isBoss ? npc.symbol || 'B' : '☺';
-      let fg  = npc.isBoss ? C.RED : (npc.isStory ? C.CYAN : C.YELLOW);
+      let sym = '☺';
+      let fg  = C.YELLOW;
+
+      if (npc.isBoss) {
+        sym = npc.symbol || 'B';
+        fg  = C.RED;
+      } else if (npc.isStory) {
+        fg = C.CYAN;
+      } else if (npc.isQuestGiver && npc.questIds?.length > 0) {
+        const quests = this.game.quests || [];
+        const hasCompletable = npc.questIds.some(id =>
+          quests.find(q => q.id === id)?.status === 'completed'
+        );
+        const hasAvailable = npc.questIds.some(id =>
+          quests.find(q => q.id === id)?.status === 'available'
+        );
+        if (hasCompletable) {
+          sym = this.game.blinkOn ? '!' : '☺';
+          fg  = C.GREEN;
+        } else if (hasAvailable) {
+          sym = this.game.blinkOn ? '?' : '☺';
+          fg  = C.YELLOW;
+        }
+      }
+
       renderer.set(sc, sr, sym, fg, C.BLACK);
     }
 

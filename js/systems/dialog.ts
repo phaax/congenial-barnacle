@@ -53,7 +53,13 @@ export function startDialog(npc, game) {
   const tags    = buildTags(game, npcQuest);
   tags.inn      = npc.innName || tags.inn;
 
-  const pool    = npc.pool || 'villager';
+  // If this NPC had quests and all are turned in, use the thankful pool
+  const allQuestsTurnedIn = npc.isQuestGiver && npc.questIds?.length > 0 &&
+    npc.questIds.every(id => {
+      const q = (game.quests || []).find(q => q.id === id);
+      return q && q.status === 'turned_in';
+    });
+  const pool    = allQuestsTurnedIn ? 'thankful' : (npc.pool || 'villager');
   const lines   = [];
 
   // Greeting
@@ -109,7 +115,7 @@ export function startDialog(npc, game) {
       npc.questIds.includes(q.id) && q.status === 'completed'
     );
     if (completedQuest) {
-      lines.push({ text: getLine('quest_giver', 'quest_complete', tags), speaker: npc.name });
+      lines.push({ text: getLine('quest_giver', 'quest_complete', tags), speaker: npc.name, action: 'turn_in' });
     }
   } else if (npc.isQuestGiver && npc.activeQuest) {
     if (npc.activeQuest.status === 'completed') {

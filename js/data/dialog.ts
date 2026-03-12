@@ -179,6 +179,26 @@ export const DIALOG_POOLS = {
     ],
   },
 
+  // ─── THANKFUL (used after all quests with this NPC have been turned in) ────────
+  thankful: {
+    greet: [
+      'You\'ve already done so much for us. Words cannot express my gratitude.',
+      'Ah, {name}! You\'re always welcome here after what you\'ve done.',
+      'My hero! Is there anything else I can help you with?',
+      'Every time I see you, I\'m reminded of what you did for us. Thank you.',
+      'The town still talks about your deeds, {name}. You\'re a legend here.',
+      'What you did means more to me than you know. Safe travels, always.',
+      'I hope the gods watch over you as you\'ve watched over us.',
+    ],
+    farewell: [
+      'Take care of yourself out there.',
+      'May fortune smile upon you, {name}.',
+      'Come back anytime. You\'re always welcome.',
+      'Safe travels, friend. You\'ve earned it.',
+      'The realm is better for having you in it.',
+    ],
+  },
+
   // ─── STORY CHARACTER (has specific story-guided lines) ───────────────────────
   story: {
     greet: [

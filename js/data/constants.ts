@@ -117,6 +117,14 @@ export const LOC_TILE = {
   TREE:        14,
   PATH:        15,
   ROAD:        16,
+  // Building-specific wall variants (same '#' char, distinct colors)
+  WALL_INN:        17,
+  WALL_SHOP:       18,
+  WALL_BLACKSMITH: 19,
+  WALL_HEALER:     20,
+  WALL_TAVERN:     21,
+  WALL_GUILD:      22,
+  WALL_TEMPLE:     23,
 };
 
 // Returns true for tiles where an NPC can be placed (walkable open floor)
