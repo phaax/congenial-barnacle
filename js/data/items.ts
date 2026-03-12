@@ -72,11 +72,12 @@ export const ITEMS = [
   { id:'ectoplasm',      name:'Ectoplasm',      type:ITEM_TYPE.MISC, value:8, weight:0, symbol:'o', fg:11, desc:'Ghostly residue.', tier:2 },
   { id:'large_gem',      name:'Large Gem',      type:ITEM_TYPE.MISC, value:100, weight:1, symbol:'♦', fg:14, desc:'A flawless gemstone.', tier:3 },
   { id:'stolen_coin',    name:'Stolen Coin',    type:ITEM_TYPE.MISC, value:3, weight:0, symbol:'$', fg:14, desc:'Poorly minted.', tier:1 },
+  { id:'local_map',      name:'Local Map',      type:ITEM_TYPE.MISC, value:50, weight:0, symbol:'?', fg:14, desc:'A hand-drawn map of the surrounding region. Reveals nearby terrain when purchased.', tier:1 },
 ];
 
 // Shop inventory tiers by town level
 export const SHOP_TIERS = {
-  1: ['dagger', 'short_sword', 'leather_armor', 'padded_armor', 'buckler', 'healing_potion', 'healing_herb', 'antidote', 'bread', 'lockpick', 'arrow'],
+  1: ['dagger', 'short_sword', 'leather_armor', 'padded_armor', 'buckler', 'healing_potion', 'healing_herb', 'antidote', 'bread', 'lockpick', 'arrow', 'local_map'],
   2: ['long_sword', 'chain_mail', 'kite_shield', 'short_bow', 'mana_potion', 'scroll_fire', 'smoke_bomb', 'amulet_of_vigor'],
   3: ['plate_armor', 'tower_shield', 'greater_heal', 'ring_of_magic', 'dark_elf_blade', 'elixir'],
 };

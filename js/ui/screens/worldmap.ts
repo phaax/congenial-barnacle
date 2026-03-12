@@ -57,6 +57,11 @@ export class WorldMapScreen {
       this.game.changeState(STATE.QUEST_LOG, { prevState: STATE.WORLD_MAP });
       return;
     }
+    if (e.key === 'm' || e.key === 'M') {
+      e.preventDefault();
+      this.game.changeState(STATE.MAP_SCREEN, { prevState: STATE.WORLD_MAP });
+      return;
+    }
     if (e.key === 'Escape') {
       this._confirmQuit();
       return;
@@ -224,7 +229,7 @@ export class WorldMapScreen {
     renderer.writeRight(0, `(${p.worldX},${p.worldY})`, C.DARK_GRAY, C.BLACK, MAIN_COLS - 1);
 
     // Controls hint
-    renderer.write(0, VIEW_H - 2, 'Arrows:Move  Enter:Enter  I:Inv  Q:Quests', C.DARK_GRAY, C.BLACK);
+    renderer.write(0, VIEW_H - 2, 'Arrows:Move  Enter:Enter  I:Inv  Q:Quests  M:Map', C.DARK_GRAY, C.BLACK);
 
     // Goal progress in top area
     this._renderGoalHint(renderer);

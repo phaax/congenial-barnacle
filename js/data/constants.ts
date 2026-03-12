@@ -69,6 +69,7 @@ export const STATE = {
   VICTORY:          'VICTORY',
   JUKEBOX:          'JUKEBOX',    // Music player overlay
   SETTINGS:         'SETTINGS',   // Settings / options menu
+  MAP_SCREEN:       'MAP_SCREEN', // Zoomed-out world map overview
 };
 
 // Location types

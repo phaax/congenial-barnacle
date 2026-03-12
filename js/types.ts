@@ -166,6 +166,7 @@ export interface Location {
   bossId?: string;
   isBossLair?: boolean;
   isStart?: boolean;
+  mapPurchased?: boolean;
 }
 
 export interface World {
