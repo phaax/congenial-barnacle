@@ -119,6 +119,14 @@ export const LOC_TILE = {
   ROAD:        16,
 };
 
+// Returns true for tiles where an NPC can be placed (walkable open floor)
+export function isWalkableTile(tile: number): boolean {
+  return tile === LOC_TILE.FLOOR ||
+         tile === LOC_TILE.PATH ||
+         tile === LOC_TILE.ROAD ||
+         tile === LOC_TILE.DOOR_OPEN;
+}
+
 // Gender options
 export const GENDER = {
   MALE:   'Male',
