@@ -20,9 +20,27 @@ export class QuestLogScreen {
 
   exit() {}
 
+  _getMainQuestEntry() {
+    const goal = this.game.world?.goal;
+    if (!goal) return null;
+    return {
+      _isMainQuest: true,
+      title: `\u2605 ${goal.name}`,
+      status: goal.completed ? QUEST_STATUS.TURNED_IN : QUEST_STATUS.ACTIVE,
+      giverLocName: 'Main Objective',
+      description: Array.isArray(goal.description) ? goal.description.join(' ') : goal.description,
+      steps: goal.steps,
+      reward: null,
+    };
+  }
+
   _getQuests() {
     const quests = this.game.quests || [];
-    if (this.tab === 'active')    return quests.filter(q => q.status === QUEST_STATUS.ACTIVE);
+    if (this.tab === 'active') {
+      const main = this._getMainQuestEntry();
+      const active = quests.filter(q => q.status === QUEST_STATUS.ACTIVE);
+      return main ? [main, ...active] : active;
+    }
     if (this.tab === 'available') return quests.filter(q => q.status === QUEST_STATUS.AVAILABLE);
     if (this.tab === 'completed') return quests.filter(q => q.status === QUEST_STATUS.COMPLETED || q.status === QUEST_STATUS.TURNED_IN);
     return [];
@@ -162,22 +180,33 @@ export class QuestLogScreen {
         row++;
       }
 
-      // Progress
-      if (q.status === QUEST_STATUS.ACTIVE && q.progressMax > 0) {
-        renderer.write(42, row++, `Progress: ${q.progress}/${q.progressMax}`, C.GREEN, C.BLACK);
-        row++;
-      }
-
-      // Reward
-      renderer.write(42, row++, 'Reward:', C.WHITE, C.BLACK);
-      if (q.reward) {
-        if (q.reward.gold) renderer.write(44, row++, `${q.reward.gold} gold`, C.YELLOW, C.BLACK);
-        if (q.reward.xp)   renderer.write(44, row++, `${q.reward.xp} XP`,   C.CYAN,   C.BLACK);
-        for (const item of (q.reward.items || [])) {
+      // Main quest: show objectives/steps
+      if (q._isMainQuest && q.steps) {
+        renderer.write(42, row++, 'Objectives:', C.WHITE, C.BLACK);
+        for (const step of q.steps) {
           if (row > 26) break;
-          const itemDef = getItem(item.id);
-          const itemLabel = (itemDef?.name || item.id) + (item.qty > 1 ? ` x${item.qty}` : '');
-          renderer.write(44, row++, itemLabel, C.WHITE, C.BLACK);
+          const check = step.done ? '\u2713' : '\u25cb';
+          const color = step.done ? C.DARK_GRAY : C.GREEN;
+          renderer.write(44, row++, `${check} ${step.text}`.slice(0, COLS - 46), color, C.BLACK);
+        }
+      } else {
+        // Progress
+        if (q.status === QUEST_STATUS.ACTIVE && q.progressMax > 0) {
+          renderer.write(42, row++, `Progress: ${q.progress}/${q.progressMax}`, C.GREEN, C.BLACK);
+          row++;
+        }
+
+        // Reward
+        renderer.write(42, row++, 'Reward:', C.WHITE, C.BLACK);
+        if (q.reward) {
+          if (q.reward.gold) renderer.write(44, row++, `${q.reward.gold} gold`, C.YELLOW, C.BLACK);
+          if (q.reward.xp)   renderer.write(44, row++, `${q.reward.xp} XP`,   C.CYAN,   C.BLACK);
+          for (const item of (q.reward.items || [])) {
+            if (row > 26) break;
+            const itemDef = getItem(item.id);
+            const itemLabel = (itemDef?.name || item.id) + (item.qty > 1 ? ` x${item.qty}` : '');
+            renderer.write(44, row++, itemLabel, C.WHITE, C.BLACK);
+          }
         }
       }
     }
