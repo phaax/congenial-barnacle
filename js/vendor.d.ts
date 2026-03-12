@@ -44,3 +44,6 @@ declare class AdPlugBackendAdapter {
 interface Window {
   game?: import('./engine/game').Game;
 }
+
+/** Injected at build time by vite.config.ts via define. */
+declare const __APP_VERSION__: string;
