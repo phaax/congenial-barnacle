@@ -155,7 +155,7 @@ export class JukeboxScreen {
 
   _renderHeader(renderer) {
     // Title
-    renderer.writeCenter(PR, '  ♫  JUKEBOX  ♫  ', C.YELLOW, C.BLACK, PC, PC + PW);
+    renderer.writeCenter(PR, '  ♫  JUKEBOX  ♫  ', C.YELLOW, C.BLACK, PC, PC + PW - 1);
 
     // Separator
     renderer.write(PC, PR + 1, '╠', C.CYAN, C.BLACK);
@@ -258,7 +258,7 @@ export class JukeboxScreen {
     const footerRow = PR + PH - 2;
     renderer.hline(PC + 1, footerRow - 1, PW - 2, '─', C.DARK_GRAY);
     const hint = '[↑↓] Select  [Enter] Play  [S] Stop  [M] Mute  [J/Esc] Close';
-    renderer.writeCenter(footerRow, hint, C.DARK_GRAY, C.BLACK, PC, PC + PW);
+    renderer.writeCenter(footerRow, hint, C.DARK_GRAY, C.BLACK, PC, PC + PW - 1);
   }
 
   // ── Actions ───────────────────────────────────────────────────────────────
