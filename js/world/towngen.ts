@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { LOC_TILE, C } from '../data/constants';
+import { LOC_TILE, C, isWalkableTile } from '../data/constants';
 import { NPC_NAMES } from '../data/dialog';
 
 const TW = 50; // Town width
@@ -45,6 +45,24 @@ function fillRect(grid, x, y, w, h, tile) {
       setTile(grid, x + dx, y + dy, tile);
     }
   }
+}
+
+// Finds the nearest walkable tile to (startX, startY) by expanding outward in rings.
+// Skips any positions in the optional `occupied` set (format: "x,y").
+// Returns null if no walkable tile is found within radius 10.
+export function findWalkableNear(grid, startX, startY, occupied = new Set()) {
+  for (let r = 0; r <= 10; r++) {
+    for (let dx = -r; dx <= r; dx++) {
+      for (let dy = -r; dy <= r; dy++) {
+        if (Math.abs(dx) !== r && Math.abs(dy) !== r) continue; // Only check the ring edge
+        const x = startX + dx;
+        const y = startY + dy;
+        if (x < 0 || x >= TW || y < 0 || y >= TH) continue;
+        if (isWalkableTile(getTile(grid, x, y)) && !occupied.has(`${x},${y}`)) return { x, y };
+      }
+    }
+  }
+  return null;
 }
 
 function drawBuilding(grid, x, y, w, h) {
@@ -153,11 +171,16 @@ export function generateTown(rng, loc) {
 
   // Spawn NPCs inside buildings
   const npcs = [];
+  const occupiedPos = new Set();
   for (const b of buildings) {
     const npcList = buildingNPCs(rng, b, loc);
+    const cx = b.x + Math.floor(b.w / 2);
+    const cy = b.y + Math.floor(b.h / 2);
     npcList.forEach(npc => {
-      npc.x = b.x + Math.floor(b.w / 2);
-      npc.y = b.y + Math.floor(b.h / 2);
+      const pos = findWalkableNear(grid, cx, cy, occupiedPos) ?? { x: cx, y: cy };
+      npc.x = pos.x;
+      npc.y = pos.y;
+      occupiedPos.add(`${npc.x},${npc.y}`);
       npcs.push(npc);
     });
   }
@@ -166,13 +189,16 @@ export function generateTown(rng, loc) {
   if (loc.questGivers) {
     for (const qg of loc.questGivers) {
       if (qg._placed) continue; // already placed inside a building
+      const qgRaw = { x: roadX + rng.int(-3, 3), y: roadY + rng.int(-2, 2) };
+      const qgPos = findWalkableNear(grid, qgRaw.x, qgRaw.y, occupiedPos) ?? { x: roadX, y: roadY };
+      occupiedPos.add(`${qgPos.x},${qgPos.y}`);
       npcs.push({
         id: `qg_${qg.name}`,
         name: qg.name,
         type: 'quest_giver',
         pool: 'quest_giver',
-        x: roadX + rng.int(-3, 3),
-        y: roadY + rng.int(-2, 2),
+        x: qgPos.x,
+        y: qgPos.y,
         dialogSeen: false,
         isQuestGiver: true,
         questIds: qg.questIds || [],
@@ -183,14 +209,17 @@ export function generateTown(rng, loc) {
   // Add story characters if any are in this town
   if (loc.storyCharacters) {
     for (const sc of loc.storyCharacters) {
+      const scRaw = { x: roadX + rng.int(-5, 5), y: roadY + rng.int(-3, 3) };
+      const scPos = findWalkableNear(grid, scRaw.x, scRaw.y, occupiedPos) ?? { x: roadX, y: roadY };
+      occupiedPos.add(`${scPos.x},${scPos.y}`);
       npcs.push({
         id: `story_${sc.name}`,
         name: sc.name,
         type: 'story',
         pool: 'story',
         storyRole: sc.role,
-        x: roadX + rng.int(-5, 5),
-        y: roadY + rng.int(-3, 3),
+        x: scPos.x,
+        y: scPos.y,
         isStory: true,
         dialogSeen: false,
       });
