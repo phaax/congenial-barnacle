@@ -81,9 +81,10 @@ export class QuestLogScreen {
 
   handleClick(col, row, button) {
     if (row === 2) {
-      if (col >= 2  && col <= 14) { this.tab = 'active';    this._refreshList(); return; }
-      if (col >= 16 && col <= 30) { this.tab = 'available'; this._refreshList(); return; }
-      if (col >= 32 && col <= 46) { this.tab = 'completed'; this._refreshList(); return; }
+      // Tab positions match render: '[1] Active'=cols 2-11, '[2] Available'=cols 14-26, '[3] Completed'=cols 29-41
+      if (col >= 2  && col <= 11) { this.tab = 'active';    this._refreshList(); return; }
+      if (col >= 14 && col <= 26) { this.tab = 'available'; this._refreshList(); return; }
+      if (col >= 29 && col <= 41) { this.tab = 'completed'; this._refreshList(); return; }
     }
     if (row >= 5 && row < 22) {
       this.list.handleClick(col, row, 1, 5, 38);

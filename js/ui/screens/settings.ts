@@ -121,7 +121,7 @@ export class SettingsScreen {
     renderer.drawBox(PC, PR, PW, PH, C.CYAN, C.BLACK, 'double', false);
 
     // Title
-    renderer.writeCenter(PR, '  SETTINGS  ', C.YELLOW, C.BLACK, PC, PC + PW);
+    renderer.writeCenter(PR, '  SETTINGS  ', C.YELLOW, C.BLACK, PC, PC + PW - 1);
 
     // Separator
     renderer.hline(PC + 1, PR + 1, PW - 2, '═', C.CYAN);
@@ -129,7 +129,7 @@ export class SettingsScreen {
     renderer.set(PC + PW - 1, PR + 1, '╣', C.CYAN, C.BLACK);
 
     // Description
-    renderer.writeCenter(PR + 3, 'Audio Settings', C.WHITE, C.BLACK, PC, PC + PW);
+    renderer.writeCenter(PR + 3, 'Audio Settings', C.WHITE, C.BLACK, PC, PC + PW - 1);
     renderer.hline(PC + 1, PR + 4, PW - 2, '─', C.DARK_GRAY);
 
     // Menu items
@@ -148,9 +148,9 @@ export class SettingsScreen {
     else if (sel === 2) helpText = 'Mute/unmute all music output';
     else helpText = 'Return to previous screen';
 
-    renderer.writeCenter(helpRow, helpText, C.DARK_GRAY, C.BLACK, PC, PC + PW);
+    renderer.writeCenter(helpRow, helpText, C.DARK_GRAY, C.BLACK, PC, PC + PW - 1);
 
     // Footer
-    renderer.writeCenter(helpRow + 1, '[Esc] Back', C.DARK_GRAY, C.BLACK, PC, PC + PW);
+    renderer.writeCenter(helpRow + 1, '[Esc] Back', C.DARK_GRAY, C.BLACK, PC, PC + PW - 1);
   }
 }

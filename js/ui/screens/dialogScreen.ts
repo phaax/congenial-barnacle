@@ -276,8 +276,8 @@ export class DialogScreen {
       this._questMenu.render(renderer, 10, 14, { width: COLS - 20 });
     }
 
-    // Hint — fill the full row first so panel border chars don't bleed through
-    renderer.fill(0, 25, COLS, 1, ' ', C.BLACK, C.BLACK);
+    // Hint — fill only the interior columns so the dialog panel border is preserved
+    renderer.fill(1, 25, COLS - 2, 1, ' ', C.BLACK, C.BLACK);
     if (!this._questMode) {
       renderer.write(1, 25, 'Space/Enter: Continue  Escape: Close', C.DARK_GRAY, C.BLACK);
     }

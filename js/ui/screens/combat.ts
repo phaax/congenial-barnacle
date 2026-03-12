@@ -324,13 +324,13 @@ export class CombatScreen {
     if (this._showResult) {
       const isVic = this._resultMsg === 'VICTORY!';
       renderer.drawPanel(20, 10, 40, 10, '', isVic ? C.GREEN : C.RED, C.BLACK, 'double');
-      renderer.writeCenter(13, this._resultMsg, isVic ? C.YELLOW : C.RED, C.BLACK, 20, 59);
+      renderer.writeCenter(13, this._resultMsg, isVic ? C.YELLOW : C.RED, C.BLACK, 21, 58);
       if (isVic && combat.totalXp) {
-        renderer.writeCenter(15, `+${combat.totalXp} XP  +${combat.totalGold} Gold`, C.WHITE, C.BLACK, 20, 59);
+        renderer.writeCenter(15, `+${combat.totalXp} XP  +${combat.totalGold} Gold`, C.WHITE, C.BLACK, 21, 58);
         if (combat.lootItems?.length > 0) {
           const lootStr = combat.lootItems.join(', ');
           const display = lootStr.length > 30 ? lootStr.slice(0, 27) + '...' : lootStr;
-          renderer.writeCenter(16, `Found: ${display}`, C.YELLOW, C.BLACK, 20, 59);
+          renderer.writeCenter(16, `Found: ${display}`, C.YELLOW, C.BLACK, 21, 58);
         }
       }
     }
