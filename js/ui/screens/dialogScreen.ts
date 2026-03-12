@@ -2,6 +2,7 @@
 import { C, COLS, ROWS, STATE } from '../../data/constants';
 import { getLine } from '../../data/dialog';
 import { acceptQuest, getAvailableQuestsAt, turnInQuest } from '../../systems/quest';
+import { getItem } from '../../data/items';
 import { Menu } from '../menu';
 
 const NPC_ROLE_LABELS: Record<string, string> = {
@@ -41,6 +42,9 @@ export class DialogScreen {
     this._questMenu = null;
     this._questMode = false;
     this._availableQuests = [];
+    this._showReward = false;
+    this._rewardLines = [];
+    this._rewardIdx = 0;
   }
 
   enter(data) {
@@ -53,6 +57,9 @@ export class DialogScreen {
     this._typeDone  = false;
     this._questMode = false;
     this._questMenu = null;
+    this._showReward = false;
+    this._rewardLines = [];
+    this._rewardIdx = 0;
 
     // Check for available quests for this specific NPC
     this._availableQuests = [];
@@ -99,6 +106,16 @@ export class DialogScreen {
   }
 
   _advance() {
+    // Reward display mode: advance through reward lines then close
+    if (this._showReward) {
+      this._rewardIdx++;
+      if (this._rewardIdx >= this._rewardLines.length) {
+        this._showReward = false;
+        this.game.changeState(this.prevState);
+      }
+      return;
+    }
+
     if (!this._typeDone) {
       // Skip typewriter animation
       this._charIdx = this._getCurrentText().length;
@@ -129,6 +146,19 @@ export class DialogScreen {
         const reward = turnInQuest(this.game.quests, completedQuest.id, this.game.player);
         if (reward) {
           this.game.addMessage(`Quest complete! Received ${reward.gold} gold and ${reward.xp} XP.`, 'quest');
+          // Build reward lines to display in dialog before dismissing
+          this._rewardLines = [
+            `Quest complete!`,
+            `Received: ${reward.gold} gold  +  ${reward.xp} XP`,
+          ];
+          for (const ri of (reward.items || [])) {
+            const rItem = getItem(ri.id);
+            if (rItem) this._rewardLines.push(`Item: ${rItem.name}${ri.qty > 1 ? ' x' + ri.qty : ''}`);
+          }
+          this._rewardLines.push('(Press Space to continue)');
+          this._rewardIdx = 0;
+          this._showReward = true;
+          return;
         }
       }
       this.game.changeState(this.prevState);
@@ -247,8 +277,8 @@ export class DialogScreen {
     // Dialog box
     renderer.drawPanel(0, 14, COLS, 12, npc.name, C.WHITE, C.BLACK, 'double');
 
-    // NPC portrait and dialog text — only when not showing quest menu
-    if (!this._questMode) {
+    // NPC portrait and dialog text — only when not showing quest menu or reward
+    if (!this._questMode && !this._showReward) {
       const portraitLines = NPC_PORTRAITS[npc.type || 'villager'] || NPC_PORTRAITS.villager;
       for (let i = 0; i < portraitLines.length; i++) {
         renderer.write(2, 15 + i, portraitLines[i], C.CYAN, C.BLACK);
@@ -267,6 +297,20 @@ export class DialogScreen {
 
       if (this._typeDone && this.game.blinkOn) {
         renderer.write(12, 18 + Math.min(lines.length, 3), '▶', C.YELLOW, C.BLACK);
+      }
+    }
+
+    // Quest reward display
+    if (this._showReward) {
+      const portraitLines = NPC_PORTRAITS[npc.type || 'villager'] || NPC_PORTRAITS.villager;
+      for (let i = 0; i < portraitLines.length; i++) {
+        renderer.write(2, 15 + i, portraitLines[i], C.CYAN, C.BLACK);
+      }
+      renderer.write(12, 15, npc.name, C.YELLOW, C.BLACK);
+      for (let i = 0; i <= this._rewardIdx && i < this._rewardLines.length; i++) {
+        const isLast = i === this._rewardLines.length - 1;
+        renderer.write(12, 17 + i, this._rewardLines[i],
+          isLast ? C.DARK_GRAY : (i === 0 ? C.GREEN : C.YELLOW), C.BLACK);
       }
     }
 

@@ -9,13 +9,14 @@ import { getSkill } from '../data/skills';
 export function spawnMonster(id, rng) {
   const template = getMonster(id);
   if (!template) return null;
+  const hp = rng.int(template.hp[0], template.hp[1]);
   return {
     id:          template.id,
     name:        template.name,
     symbol:      template.symbol,
     fg:          template.fg,
-    hp:          rng.int(template.hp[0], template.hp[1]),
-    maxHp:       rng.int(template.hp[0], template.hp[1]),
+    hp,
+    maxHp:       hp,
     atk:         template.atk,
     def:         template.def,
     xp:          template.xp,

@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { QUEST_TEMPLATES, QUEST_STATUS, MAX_ACTIVE_QUESTS } from '../data/quests';
-import { getItem } from '../data/items';
+import { getItem, addToInventory } from '../data/items';
 import { RNG } from '../engine/rng';
 
 // Generate quest instances for a world
@@ -183,9 +183,7 @@ export function turnInQuest(quests, questId, player) {
   player.xp   += q.reward.xp;
 
   for (const item of q.reward.items) {
-    if (player.inventory.length < 20) {
-      player.inventory.push({ id: item.id, qty: item.qty || 1 });
-    }
+    addToInventory(player, item.id, item.qty || 1);
   }
 
   // Remove quest items
