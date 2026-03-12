@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { C, COLS, ROWS, STATE } from '../../data/constants';
 import { getItem, getShopInventoryByRole, addToInventory } from '../../data/items';
+import { clearFogAroundLocation } from '../../world/worldgen';
 import { ScrollList, Confirm } from '../menu';
 
 export class ShopScreen {
@@ -61,7 +62,17 @@ export class ShopScreen {
       this.messageColor = C.RED;
       return;
     }
-    if (player.inventory.length >= 20) {
+
+    const isInstantUse = item.id === 'local_map';
+    if (isInstantUse) {
+      const loc = this.game.currentLocation;
+      if (loc?.mapPurchased) {
+        this.message = 'You already have a map of this area.';
+        this.messageColor = C.DARK_GRAY;
+        return;
+      }
+    }
+    if (!isInstantUse && player.inventory.length >= 20) {
       this.message = 'Your inventory is full!';
       this.messageColor = C.RED;
       return;
@@ -78,6 +89,21 @@ export class ShopScreen {
     const player = this.game.player;
     if (!player) return;
     player.gold -= item.value;
+
+    if (item.id === 'local_map') {
+      const loc = this.game.currentLocation;
+      if (loc) {
+        const tier = loc.tier || 1;
+        const radius = 15 + tier * 5; // tier 1→20, tier 2→25, tier 3→30
+        clearFogAroundLocation(this.game.world, loc.x, loc.y, radius);
+        loc.mapPurchased = true;
+      }
+      this.message = 'The merchant marks the local area on your behalf.';
+      this.messageColor = C.GREEN;
+      this.game.addMessage('Map purchased. Local area revealed!', 'normal');
+      return;
+    }
+
     addToInventory(player, item.id, 1);
     this._refreshSellList();
     this.message = `Bought ${item.name} for ${item.value}g.`;

@@ -128,10 +128,10 @@ export function generateTown(rng, loc) {
 
   // Place buildings on four quadrants
   const placements = [
-    { col: 2,          row: 2,       limit: 3 }, // top-left
-    { col: roadX + 2,  row: 2,       limit: 3 }, // top-right
-    { col: 2,          row: roadY + 2, limit: 3 }, // bottom-left
-    { col: roadX + 2,  row: roadY + 2, limit: 3 }, // bottom-right
+    { col: 2,         row: 2,          limit: 3, maxX: roadX - 1, maxY: roadY - 1 }, // top-left
+    { col: roadX + 2, row: 2,          limit: 3, maxX: TW - 3,    maxY: roadY - 1 }, // top-right
+    { col: 2,         row: roadY + 2,  limit: 3, maxX: roadX - 1, maxY: TH - 3    }, // bottom-left
+    { col: roadX + 2, row: roadY + 2,  limit: 3, maxX: TW - 3,    maxY: TH - 3    }, // bottom-right
   ];
 
   // Shuffle the full eligible list ONCE globally so each building type appears at most once.
@@ -148,7 +148,7 @@ export function generateTown(rng, loc) {
       const bdef = buildQueue[queueIdx];
       // If building doesn't fit in remaining space of this quadrant, stop here
       // and let the next quadrant try this building (don't advance queueIdx)
-      if (curX + bdef.w >= TW - 2 || curY + bdef.h >= TH - 2) break;
+      if (curX + bdef.w > placement.maxX || curY + bdef.h > placement.maxY) break;
       const buildingWalls = {
         inn:        LOC_TILE.WALL_INN,
         shop:       LOC_TILE.WALL_SHOP,

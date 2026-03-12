@@ -9,6 +9,13 @@ import { spawnMonster } from '../../systems/combat';
 const VIEW_W = MAIN_COLS;   // 60
 const VIEW_H = VIEW_ROWS;   // 25
 
+// All tile variants that block movement
+const WALL_TILES = new Set([
+  LOC_TILE.WALL, LOC_TILE.WALL_INN, LOC_TILE.WALL_SHOP,
+  LOC_TILE.WALL_BLACKSMITH, LOC_TILE.WALL_HEALER,
+  LOC_TILE.WALL_TAVERN, LOC_TILE.WALL_GUILD, LOC_TILE.WALL_TEMPLE,
+]);
+
 export class LocationScreen {
   constructor(game) {
     this.game = game;
@@ -124,8 +131,8 @@ export class LocationScreen {
 
     const tile = layout.tiles[ny * w + nx];
 
-    // Can't walk through walls
-    if (tile === LOC_TILE.WALL) return;
+    // Can't walk through walls (any building type)
+    if (WALL_TILES.has(tile)) return;
     if (tile === LOC_TILE.TREE) return;
     if (tile === LOC_TILE.VOID) return;
 

@@ -104,6 +104,7 @@ export class Game {
       { VictoryScreen },
       { JukeboxScreen },
       { SettingsScreen },
+      { MapScreen },
     ] = await Promise.all([
       import('../ui/screens/mainmenu.js'),
       import('../ui/screens/charCreate.js'),
@@ -119,6 +120,7 @@ export class Game {
       import('../ui/screens/victory.js'),
       import('../ui/screens/jukebox.js'),
       import('../ui/screens/settings.js'),
+      import('../ui/screens/mapScreen.js'),
     ]);
 
     this.screens = {
@@ -136,6 +138,7 @@ export class Game {
       [STATE.VICTORY]:    new VictoryScreen(this),
       [STATE.JUKEBOX]:    new JukeboxScreen(this),
       [STATE.SETTINGS]:   new SettingsScreen(this),
+      [STATE.MAP_SCREEN]: new MapScreen(this),
     };
 
     // Hide loading overlay
@@ -178,9 +181,10 @@ export class Game {
             this.openJukebox(data);
             return;
           }
-          // [M] toggles mute globally
+          // [M] toggles mute globally (except on WORLD_MAP/MAP_SCREEN which handle M themselves)
           if (e.key === 'm' || e.key === 'M') {
-            if (stateName !== STATE.JUKEBOX && stateName !== STATE.SETTINGS) {
+            if (stateName !== STATE.JUKEBOX && stateName !== STATE.SETTINGS &&
+                stateName !== STATE.WORLD_MAP && stateName !== STATE.MAP_SCREEN) {
               e.preventDefault();
               this.music.toggleMute();
               return;

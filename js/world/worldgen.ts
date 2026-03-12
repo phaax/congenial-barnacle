@@ -388,6 +388,20 @@ export function updateFog(world, px, py, radius = 5) {
   }
 }
 
+// Clear fog in a radius around a point, setting unseen (0) tiles to seen (1).
+// Tiles already seen (1) or visible (2) are not downgraded.
+export function clearFogAroundLocation(world, x: number, y: number, radius: number) {
+  const W = world.width, H = world.height;
+  for (let dy = -radius; dy <= radius; dy++) {
+    for (let dx = -radius; dx <= radius; dx++) {
+      if (dx * dx + dy * dy > radius * radius) continue;
+      const nx = x + dx, ny = y + dy;
+      if (nx < 0 || nx >= W || ny < 0 || ny >= H) continue;
+      if (world.fog[ny * W + nx] === 0) world.fog[ny * W + nx] = 1;
+    }
+  }
+}
+
 // Location type display info
 export const LOC_DISPLAY = {
   [LOC_TYPE.TOWN]:    { symbol: 'Ω', fg: C.YELLOW,    name: 'Town'    },
