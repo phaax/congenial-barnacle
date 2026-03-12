@@ -79,7 +79,7 @@ export class Renderer {
   writeCenter(row: number, str: string, fg = C.WHITE, bg = C.BLACK, colStart = 0, colEnd = COLS - 1): void {
     const width = colEnd - colStart + 1;
     const start = colStart + Math.floor((width - str.length) / 2);
-    this.write(start, row, str, fg, bg);
+    this.writeClipped(start, row, str, fg, bg, colStart, colEnd);
   }
 
   writeRight(row: number, str: string, fg = C.WHITE, bg = C.BLACK, colEnd = COLS - 1): void {

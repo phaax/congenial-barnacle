@@ -152,8 +152,9 @@ export class CharCreateScreen {
     // Left panel list area: rows 4-20
     if (this.step === STEP.NAME) return;
 
-    const listX = 2;
-    const listW = 38;
+    // Lists render at col listX+2=4, width listW-2=36 — match hover/render coords
+    const listX = 4;
+    const listW = 36;
     const listY = 5;
     const listH = 15;
 

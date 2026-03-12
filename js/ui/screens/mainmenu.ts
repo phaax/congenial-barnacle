@@ -234,10 +234,10 @@ export class MainMenuScreen {
   _renderMenu(renderer) {
     const menuStartRow = 13;
 
-    // Menu header
-    renderer.writeCenter(menuStartRow, '┌─────────────────────┐', C.DARK_GRAY, C.BLACK);
-    renderer.writeCenter(menuStartRow + 1, '│   MAIN  MENU        │', C.LIGHT_GRAY, C.BLACK);
-    renderer.writeCenter(menuStartRow + 2, '└─────────────────────┘', C.DARK_GRAY, C.BLACK);
+    // Menu header — 26 chars wide so it spans cols 27-52 and encloses the selection arrows
+    renderer.writeCenter(menuStartRow, '┌────────────────────────┐', C.DARK_GRAY, C.BLACK);
+    renderer.writeCenter(menuStartRow + 1, '│      MAIN  MENU        │', C.LIGHT_GRAY, C.BLACK);
+    renderer.writeCenter(menuStartRow + 2, '└────────────────────────┘', C.DARK_GRAY, C.BLACK);
 
     // Render each menu option centered
     const options = this.menu.options;
