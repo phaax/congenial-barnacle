@@ -319,10 +319,12 @@ export class LocationScreen {
     // Draw player
     renderer.set(vx, vy, '@', C.WHITE, C.BLACK);
 
-    // Location name at top
+    // Location name at top — clear full row first so no map tiles bleed through
+    renderer.fill(0, 0, VIEW_W, 1, ' ', C.BLACK, C.BLACK);
     renderer.write(0, 0, `[ ${loc?.name || 'Unknown'} ]`, C.YELLOW, C.BLACK);
 
-    // Controls
+    // Controls — clear full row first so no map tiles bleed through
+    renderer.fill(0, VIEW_H - 1, VIEW_W, 1, ' ', C.BLACK, C.BLACK);
     renderer.write(0, VIEW_H - 1, 'Arrows:Move  Space:Interact  I:Inv  Q:Quests  Esc:Menu', C.DARK_GRAY, C.BLACK);
 
     // Pause menu overlay

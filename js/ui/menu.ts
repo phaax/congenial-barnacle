@@ -225,12 +225,12 @@ export class ScrollList {
       }
     }
 
-    // Scroll indicators
+    // Scroll indicators — placed one column past the item area to avoid overwriting item text
     if (this.scroll > 0) {
-      renderer.write(col + width - 1, row, '▲', C.YELLOW, bg);
+      renderer.write(col + width, row, '▲', C.YELLOW, bg);
     }
     if (this.scroll + this.visibleH < this.items.length) {
-      renderer.write(col + width - 1, row + this.visibleH - 1, '▼', C.YELLOW, bg);
+      renderer.write(col + width, row + this.visibleH - 1, '▼', C.YELLOW, bg);
     }
   }
 }

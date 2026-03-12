@@ -156,11 +156,11 @@ export class ShopScreen {
     if (e.key === 's' || e.key === 'S') { this.mode = 'sell'; this.message = ''; return; }
 
     if (this.mode === 'buy') {
-      if (this.buyList.handleKey(e)) return;
       if (e.key === 'Enter' || e.key === ' ') { this._requestBuy(); return; }
+      if (this.buyList.handleKey(e)) return;
     } else {
-      if (this.sellList.handleKey(e)) return;
       if (e.key === 'Enter' || e.key === ' ') { this._requestSell(); return; }
+      if (this.sellList.handleKey(e)) return;
     }
   }
 
@@ -257,9 +257,9 @@ export class ShopScreen {
       }
     });
 
-    // Details pane
+    // Details pane — skip when confirm dialog is active to avoid ghost text
     const selIdx   = activeList.selected;
-    const selEntry = items[selIdx];
+    const selEntry = !this._confirm ? items[selIdx] : null;
     if (selEntry) {
       const item     = this.mode === 'buy' ? selEntry : getItem(selEntry.id);
       const equipped = this.mode === 'sell' && this._isEquipped(selEntry);

@@ -564,6 +564,11 @@ export class Game {
 
     renderer.hline(0, logRow, MAIN_COLS, '─', C.DARK_GRAY);
 
+    // Clear all message rows first so shorter messages don't leave ghost characters
+    for (let i = 0; i < MSG_ROWS - 1; i++) {
+      renderer.fill(0, logRow + 1 + i, MAIN_COLS, 1, ' ', C.BLACK, C.BLACK);
+    }
+
     for (let i = 0; i < MSG_ROWS - 1; i++) {
       const msg = msgs[i];
       if (!msg) break;

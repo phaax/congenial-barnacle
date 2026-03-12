@@ -247,13 +247,21 @@ export class CombatScreen {
         renderer.write(40, 2, `"${clipped}"`, C.DARK_GRAY, C.BLACK);
       }
 
-      // All enemies in group
+      // All enemies in group — show symbol + HP fraction for each
       if (combat.monsters.length > 1) {
         let ex = 40;
+        renderer.write(ex, 3, 'Group:', C.DARK_GRAY, C.BLACK);
+        ex = 40;
         for (let i = 0; i < combat.monsters.length; i++) {
           const m = combat.monsters[i];
-          const fg = m.hp <= 0 ? C.DARK_GRAY : m.fg;
-          renderer.set(ex + i * 2, 4, m.symbol, fg, C.BLACK);
+          const isActive = m === monster;
+          const dead = m.hp <= 0;
+          const fg = dead ? C.DARK_GRAY : (isActive ? C.YELLOW : m.fg);
+          const hpStr = dead ? '✗' : `${m.hp}/${m.maxHp}`;
+          const entry = `${m.symbol}${hpStr}`;
+          renderer.write(ex, 4, entry, fg, C.BLACK);
+          ex += entry.length + 1;
+          if (ex >= COLS - 2) break; // don't overflow
         }
       }
     } else {
