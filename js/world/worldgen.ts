@@ -131,6 +131,41 @@ export function generateWorld(seed) {
     return getBiome(tiles[y * W + x]).passable;
   }
 
+  // Build set of all passable tiles connected to the map center (main landmass).
+  // BFS flood-fill from center — excludes disconnected secondary islands.
+  const mainIsland = new Set<number>();
+  (function buildMainIsland() {
+    let seedX = Math.floor(W / 2);
+    let seedY = Math.floor(H / 2);
+    // Find nearest passable tile to center (deterministic, no RNG calls)
+    outer: for (let r = 0; r <= 20; r++) {
+      for (let dy = -r; dy <= r; dy++) {
+        for (let dx = -r; dx <= r; dx++) {
+          if (Math.abs(dx) !== r && Math.abs(dy) !== r) continue; // perimeter only
+          if (isPassable(seedX + dx, seedY + dy)) {
+            seedX += dx; seedY += dy;
+            break outer;
+          }
+        }
+      }
+    }
+    if (!isPassable(seedX, seedY)) return; // degenerate: entire map is ocean
+    const queue: number[] = [seedY * W + seedX];
+    mainIsland.add(seedY * W + seedX);
+    while (queue.length > 0) {
+      const idx = queue.shift()!;
+      const cx = idx % W;
+      const cy = Math.floor(idx / W);
+      for (const [nx, ny] of [[cx-1,cy],[cx+1,cy],[cx,cy-1],[cx,cy+1]] as [number,number][]) {
+        const nIdx = ny * W + nx;
+        if (!mainIsland.has(nIdx) && isPassable(nx, ny)) {
+          mainIsland.add(nIdx);
+          queue.push(nIdx);
+        }
+      }
+    }
+  })();
+
   // Helper: find a land tile near a position
   function findLandNear(cx, cy, radius = 10) {
     for (let r = 0; r <= radius; r++) {
@@ -164,6 +199,7 @@ export function generateWorld(seed) {
       const x = rng.int(5, W - 6);
       const y = rng.int(5, H - 6);
       if (!isPassable(x, y)) continue;
+      if (!mainIsland.has(y * W + x)) continue;
       if (biomeFilter && !biomeFilter(tiles[y * W + x])) continue;
       if (tooClose(x, y, locations, minDist)) continue;
 
