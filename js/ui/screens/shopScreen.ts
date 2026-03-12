@@ -156,11 +156,11 @@ export class ShopScreen {
     if (e.key === 's' || e.key === 'S') { this.mode = 'sell'; this.message = ''; return; }
 
     if (this.mode === 'buy') {
-      if (this.buyList.handleKey(e)) return;
       if (e.key === 'Enter' || e.key === ' ') { this._requestBuy(); return; }
+      if (this.buyList.handleKey(e)) return;
     } else {
-      if (this.sellList.handleKey(e)) return;
       if (e.key === 'Enter' || e.key === ' ') { this._requestSell(); return; }
+      if (this.sellList.handleKey(e)) return;
     }
   }
 
