@@ -121,6 +121,19 @@ export class DialogScreen {
       this._openQuestMenu();
       return;
     }
+    if (line?.action === 'turn_in') {
+      const completedQuest = (this.game.quests || []).find(q =>
+        this.npc.questIds?.includes(q.id) && q.status === 'completed'
+      );
+      if (completedQuest) {
+        const reward = turnInQuest(this.game.quests, completedQuest.id, this.game.player);
+        if (reward) {
+          this.game.addMessage(`Quest complete! Received ${reward.gold} gold and ${reward.xp} XP.`, 'quest');
+        }
+      }
+      this.game.changeState(this.prevState);
+      return;
+    }
     if (line?.isFarewell || this._isLastLine()) {
       this.game.changeState(this.prevState);
       return;
