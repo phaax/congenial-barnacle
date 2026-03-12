@@ -138,9 +138,10 @@ export function generateDungeon(rng, loc) {
     setTile(g, lastCenter.x, lastCenter.y, LOC_TILE.ALTAR);
     g.bossRoom = lastRoom;
     g.bossPos  = lastCenter;
-  } else if (rng.chance(30)) {
-    // Multi-level indicator
+  } else if (rng.chance(60)) {
+    // Hidden exit to the surface — functional alternate escape route
     setTile(g, lastCenter.x, lastCenter.y, LOC_TILE.STAIRS_DOWN);
+    g.exits.push({ x: lastCenter.x, y: lastCenter.y, dest: 'world' });
   }
 
   // Place chests

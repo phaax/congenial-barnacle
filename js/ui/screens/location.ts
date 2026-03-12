@@ -142,6 +142,13 @@ export class LocationScreen {
       return;
     }
 
+    // Stairs down: hidden exit to the surface
+    if (tile === LOC_TILE.STAIRS_DOWN) {
+      this.game.addMessage('You find a hidden exit to the surface.', 'normal');
+      this.game.exitLocation();
+      return;
+    }
+
     // Check for NPC at destination
     const npc = layout.npcs.find(n => n.x === nx && n.y === ny);
     if (npc) {
@@ -204,6 +211,7 @@ export class LocationScreen {
         return;
       }
       if (tile === LOC_TILE.STAIRS_UP) { this.game.exitLocation(); return; }
+      if (tile === LOC_TILE.STAIRS_DOWN) { this.game.addMessage('You find a hidden exit to the surface.', 'normal'); this.game.exitLocation(); return; }
       if (tile === LOC_TILE.ALTAR)     { this.game.addMessage('The altar hums with power.', 'normal'); return; }
     }
 
