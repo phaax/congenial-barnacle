@@ -193,7 +193,7 @@ export class Renderer {
   }
 
   progressBar(col: number, row: number, len: number, value: number, max: number, fgFull = C.GREEN, fgEmpty = C.DARK_GRAY, bg = C.BLACK): void {
-    const filled = Math.round((value / max) * len);
+    const filled = max > 0 ? Math.round((value / max) * len) : 0;
     for (let i = 0; i < len; i++) {
       this.set(col + i, row, '█', i < filled ? fgFull : fgEmpty, bg);
     }

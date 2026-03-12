@@ -108,15 +108,21 @@ export function generateTown(rng, loc) {
     { col: roadX + 2,  row: roadY + 2, limit: 3 }, // bottom-right
   ];
 
+  // Shuffle the full eligible list ONCE globally so each building type appears at most once.
+  // Distribute sequentially across quadrants: when a building doesn't fit in this quadrant,
+  // stop and let the next quadrant try it (don't consume it from the queue).
+  const buildQueue = rng.shuffle([...eligible]);
+  let queueIdx = 0;
+
   for (const placement of placements) {
     let curX = placement.col;
     let curY = placement.row;
     let count = 0;
-    for (const bdef of rng.shuffle([...eligible])) {
-      if (count >= placement.limit) break;
-      if (curX + bdef.w >= TW - 2) break;
-      if (curY + bdef.h >= TH - 2) break;
-
+    while (queueIdx < buildQueue.length && count < placement.limit) {
+      const bdef = buildQueue[queueIdx];
+      // If building doesn't fit in remaining space of this quadrant, stop here
+      // and let the next quadrant try this building (don't advance queueIdx)
+      if (curX + bdef.w >= TW - 2 || curY + bdef.h >= TH - 2) break;
       const door = drawBuilding(grid, curX, curY, bdef.w, bdef.h);
       buildings.push({ ...bdef, x: curX, y: curY, doorX: door.doorX, doorY: door.doorY });
       // Clear path in front of door so it's always accessible
@@ -124,6 +130,7 @@ export function generateTown(rng, loc) {
         setTile(grid, door.doorX, door.doorY + step, LOC_TILE.PATH);
       }
       curX += bdef.w + 2;
+      queueIdx++;
       count++;
     }
   }
@@ -192,7 +199,7 @@ export function generateTown(rng, loc) {
 
   grid.npcs = npcs;
   grid.buildings = buildings;
-  grid.playerStart = { x: roadX, y: roadY }; // start at road center
+  grid.playerStart = { x: exitX, y: exitY - 1 }; // start just inside the entrance
 
   return grid;
 }
