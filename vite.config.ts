@@ -1,5 +1,28 @@
+import { execSync } from 'child_process';
+import { readFileSync } from 'fs';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
+
+/**
+ * Compute a version string similar to NerdBank GitVersioning:
+ *   {base}.{height}+g{hash}         on a clean tree
+ *   {base}.{height}+g{hash}-dirty   with uncommitted changes
+ *
+ * - base:   "version" field from version.json (e.g. "0.1")
+ * - height: total number of commits reachable from HEAD
+ * - hash:   7-char abbreviated commit hash
+ */
+function computeVersion(): string {
+  const { version: base } = JSON.parse(readFileSync('version.json', 'utf8')) as { version: string };
+  try {
+    const height = execSync('git rev-list --count HEAD', { encoding: 'utf8' }).trim();
+    const hash   = execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).trim();
+    const dirty  = execSync('git status --porcelain', { encoding: 'utf8' }).trim().length > 0;
+    return `${base}.${height}+g${hash}${dirty ? '-dirty' : ''}`;
+  } catch {
+    return base;
+  }
+}
 
 export default defineConfig({
   // Relative base so the game works when served from a GitHub Pages subfolder
@@ -8,6 +31,11 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
+  },
+  define: {
+    // Replaced at build time with the computed git version string.
+    // Use __APP_VERSION__ anywhere in TypeScript source to get the value.
+    __APP_VERSION__: JSON.stringify(computeVersion()),
   },
   plugins: [
     VitePWA({

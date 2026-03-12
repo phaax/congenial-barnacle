@@ -282,8 +282,8 @@ export class MainMenuScreen {
     const tagline = TAGLINES[this.taglineIndex];
     renderer.writeCenter(footerRow, tagline, C.DARK_CYAN, C.BLACK);
 
-    // Version / credits
-    renderer.writeCenter(footerRow + 1, 'Chronicles of the Realm  v1.0', C.DARK_GRAY, C.BLACK);
+    // Version / credits — version string is injected at build time from git
+    renderer.writeCenter(footerRow + 1, `Chronicles of the Realm  v${__APP_VERSION__}`, C.DARK_GRAY, C.BLACK);
   }
 
   _renderDecorations(renderer) {
