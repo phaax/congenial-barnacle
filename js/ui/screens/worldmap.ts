@@ -2,6 +2,22 @@
 import { C, COLS, ROWS, MAIN_COLS, SIDE_COLS, MSG_ROWS, VIEW_ROWS, STATE, LOC_TYPE, WORLD_TILE } from '../../data/constants';
 import { getBiome, BIOMES } from '../../data/biomes';
 import { updateFog, getBiomeAt, getLocationAt, LOC_DISPLAY } from '../../world/worldgen';
+import { addToInventory } from '../../data/items';
+
+// Herb yield table per biome tile type (base chance out of 100, max items)
+const FORAGE_BIOME_TABLE: Record<number, { chance: number; items: string[] }> = {
+  [WORLD_TILE.FOREST]:       { chance: 70, items: ['healing_herb', 'healing_herb'] },
+  [WORLD_TILE.DENSE_FOREST]: { chance: 80, items: ['healing_herb', 'healing_herb', 'healing_herb'] },
+  [WORLD_TILE.SWAMP]:        { chance: 60, items: ['healing_herb', 'healing_herb'] },
+  [WORLD_TILE.GRASSLAND]:    { chance: 40, items: ['healing_herb'] },
+  [WORLD_TILE.HILLS]:        { chance: 35, items: ['healing_herb'] },
+  [WORLD_TILE.BEACH]:        { chance: 20, items: ['healing_herb'] },
+  [WORLD_TILE.MOUNTAINS]:    { chance: 20, items: ['healing_herb'] },
+  [WORLD_TILE.TUNDRA]:       { chance: 15, items: ['healing_herb'] },
+  [WORLD_TILE.DESERT]:       { chance: 10, items: ['healing_herb'] },
+  [WORLD_TILE.SNOW]:         { chance: 10, items: ['healing_herb'] },
+  [WORLD_TILE.PEAK]:         { chance: 5,  items: ['healing_herb'] },
+};
 
 const VIEW_W = MAIN_COLS; // 60 cols for map view
 const VIEW_H = VIEW_ROWS; // 25 rows
@@ -11,6 +27,7 @@ export class WorldMapScreen {
     this.game = game;
     this._dirty = true;
     this._hoverLoc = null;
+    this._foragedTiles = new Set(); // tracks "worldX,worldY" keys already foraged
   }
 
   enter(data) {
@@ -60,6 +77,11 @@ export class WorldMapScreen {
     if (e.key === 'm' || e.key === 'M') {
       e.preventDefault();
       this.game.changeState(STATE.MAP_SCREEN, { prevState: STATE.WORLD_MAP });
+      return;
+    }
+    if (e.key === 'f' || e.key === 'F') {
+      e.preventDefault();
+      this._forage();
       return;
     }
     if (e.key === 'Escape') {
@@ -136,6 +158,54 @@ export class WorldMapScreen {
     } else {
       this.game.addMessage('There is nothing here to enter.', 'normal');
     }
+  }
+
+  _forage() {
+    const p = this.game.player;
+    const w = this.game.world;
+    if (!p || !w) return;
+
+    if (!p.skills || !p.skills.includes('herbalism')) {
+      this.game.addMessage('You lack the Herbalism skill to forage.', 'system');
+      return;
+    }
+
+    const tileKey = `${p.worldX},${p.worldY}`;
+    if (this._foragedTiles.has(tileKey)) {
+      this.game.addMessage('You have already foraged this area.', 'system');
+      return;
+    }
+
+    const tileType = w.tiles[p.worldY * w.width + p.worldX];
+    const entry = FORAGE_BIOME_TABLE[tileType];
+    if (!entry) {
+      this.game.addMessage("There's nothing to forage here.", 'normal');
+      this._foragedTiles.add(tileKey);
+      return;
+    }
+
+    // herbFindChance passive adds 25% to the base roll
+    const rng = this.game.rng;
+    const bonus = 25; // herbalism passive herbFindChance
+    const roll = rng.int(1, 100);
+    if (roll > entry.chance + bonus) {
+      this.game.addMessage('You search the area but find no useful herbs.', 'normal');
+      this._foragedTiles.add(tileKey);
+      return;
+    }
+
+    // Determine how many items to yield (1 to max for this biome)
+    const maxItems = entry.items.length;
+    const count = rng.int(1, maxItems);
+    const found = entry.items.slice(0, count);
+
+    for (const itemId of found) {
+      addToInventory(p, itemId, 1);
+    }
+
+    const herbName = count === 1 ? 'a Healing Herb' : `${count} Healing Herbs`;
+    this.game.addMessage(`You forage the area and find ${herbName}!`, 'loot');
+    this._foragedTiles.add(tileKey);
   }
 
   _confirmQuit() {
@@ -229,7 +299,7 @@ export class WorldMapScreen {
     renderer.writeRight(0, `(${p.worldX},${p.worldY})`, C.DARK_GRAY, C.BLACK, MAIN_COLS - 1);
 
     // Controls hint
-    renderer.write(0, VIEW_H - 2, 'Arrows:Move  Enter:Enter  I:Inv  Q:Quests  M:Map', C.DARK_GRAY, C.BLACK);
+    renderer.write(0, VIEW_H - 2, 'Arrows:Move  Enter:Enter  I:Inv  Q:Quests  M:Map  F:Forage', C.DARK_GRAY, C.BLACK);
 
     // Goal progress in top area
     this._renderGoalHint(renderer);
