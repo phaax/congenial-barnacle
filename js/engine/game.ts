@@ -175,16 +175,22 @@ export class Game {
         key: (e) => {
           // First user gesture: init music
           this.music.initOnUserGesture();
-          // [J] opens jukebox from any non-overlay state
-          if ((e.key === 'j' || e.key === 'J') && stateName !== STATE.JUKEBOX && stateName !== STATE.SETTINGS) {
+          // [J] opens jukebox from any non-overlay state.
+          // Excluded: CHAR_CREATE (uses 'j' for list navigation and name input)
+          //           WORLD_MAP   (uses 'j' for southward movement)
+          if ((e.key === 'j' || e.key === 'J') &&
+              stateName !== STATE.JUKEBOX && stateName !== STATE.SETTINGS &&
+              stateName !== STATE.CHAR_CREATE && stateName !== STATE.WORLD_MAP) {
             e.preventDefault();
             this.openJukebox(data);
             return;
           }
-          // [M] toggles mute globally (except on WORLD_MAP/MAP_SCREEN which handle M themselves)
+          // [M] toggles mute globally (except on screens that handle M themselves
+          // or where M is valid text input, e.g. CHAR_CREATE name field)
           if (e.key === 'm' || e.key === 'M') {
             if (stateName !== STATE.JUKEBOX && stateName !== STATE.SETTINGS &&
-                stateName !== STATE.WORLD_MAP && stateName !== STATE.MAP_SCREEN) {
+                stateName !== STATE.WORLD_MAP && stateName !== STATE.MAP_SCREEN &&
+                stateName !== STATE.CHAR_CREATE) {
               e.preventDefault();
               this.music.toggleMute();
               return;
