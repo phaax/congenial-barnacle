@@ -65,6 +65,7 @@ export interface Player {
   worldY: number;
   locX: number;
   locY: number;
+  currentFloor: number;   // 0 = ground, 1+ = upper floors, -1 = basement
   usedRelentless: boolean;
   defeatedBoss: boolean;
   // Temporary combat state
@@ -213,6 +214,37 @@ export interface PlayerStart {
   y: number;
 }
 
+// A single floor's tile data (ground floor, upper floor, or basement)
+export interface FloorData {
+  tiles: Uint8Array;
+  width: number;
+  height: number;
+  npcs: NPC[];
+  chests: Chest[];
+  playerStart: PlayerStart;       // where the player lands when entering this floor
+  encounterZones?: EncounterZone[];
+}
+
+// One entry in layout.buildingFloors
+export interface BuildingFloorEntry {
+  buildingId: number;             // index into layout.buildings[]
+  floorIndex: number;             // -1 = basement, 1+ = upper floor (0 = ground, stored on layout directly)
+  floorData: FloorData;
+  // bounding box of the building on the town grid (for dimming checks)
+  bx: number;
+  by: number;
+  bw: number;
+  bh: number;
+}
+
+export interface EncounterZone {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  encounterRate: number;
+}
+
 export interface Layout {
   tiles: Uint8Array | number[][];
   width: number;
@@ -221,6 +253,28 @@ export interface Layout {
   npcs?: NPC[];
   chests?: Chest[];
   encounters?: unknown[];
+  // Multi-floor extension
+  buildingFloors?: BuildingFloorEntry[];   // upper floors and basements for town buildings
+  buildings?: BuildingRecord[];            // town building metadata
+  rooms?: unknown[];                       // dungeon rooms
+  encounterZones?: EncounterZone[];
+  bossRoom?: unknown;
+  bossPos?: unknown;
+  exits?: unknown[];
+}
+
+// Metadata for a placed building in a town (stored on Layout.buildings)
+export interface BuildingRecord {
+  id: number;
+  label: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  doorX: number;
+  doorY: number;
+  numUpperFloors: number;    // 0 = ground only
+  hasBasement: boolean;
 }
 
 // ─── Combat ──────────────────────────────────────────────────────────────────

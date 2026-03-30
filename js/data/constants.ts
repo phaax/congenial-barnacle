@@ -126,6 +126,16 @@ export const LOC_TILE = {
   WALL_TAVERN:     21,
   WALL_GUILD:      22,
   WALL_TEMPLE:     23,
+  // In-building/dungeon floor transitions (cyan — distinct from white world-exit stairs)
+  STAIRS_FLOOR_UP:   24,  // ascend one floor inside a building (currentFloor + 1)
+  STAIRS_FLOOR_DOWN: 25,  // descend one floor inside a building (currentFloor - 1, may reach basement -1)
+  // Cave decorations
+  CAVE_WATER:  26,  // calm cave pool (not walkable)
+  STALACTITE:  27,  // ceiling drip (walkable, decorative)
+  MUSHROOM:    28,  // cave mushroom (walkable, decorative)
+  CRYSTAL:     29,  // crystal growth (walkable, decorative)
+  // Ruin / dungeon debris
+  RUBBLE:      30,  // fallen rubble (walkable, decorative)
 };
 
 // Returns true for tiles where an NPC can be placed (walkable open floor)
@@ -133,7 +143,11 @@ export function isWalkableTile(tile: number): boolean {
   return tile === LOC_TILE.FLOOR ||
          tile === LOC_TILE.PATH ||
          tile === LOC_TILE.ROAD ||
-         tile === LOC_TILE.DOOR_OPEN;
+         tile === LOC_TILE.DOOR_OPEN ||
+         tile === LOC_TILE.STALACTITE ||
+         tile === LOC_TILE.MUSHROOM ||
+         tile === LOC_TILE.CRYSTAL ||
+         tile === LOC_TILE.RUBBLE;
 }
 
 // Gender options

@@ -30,6 +30,8 @@ export class Game {
   music: MusicManager;
   currentLocation: Location | null;
   currentLayout: Layout | null;
+  currentFloorData: import('../types').FloorData | null;   // active floor tile data (null = ground)
+  currentFloorEntry: import('../types').BuildingFloorEntry | null; // bounding box for dimming
   currentState: string | null;
   screens: Record<string, Screen>;
   pendingState: { state: string; data: unknown } | null;
@@ -65,10 +67,12 @@ export class Game {
     this._settingsPrevState = null;
     this._settingsPrevData  = null;
 
-    this.currentLocation = null;
-    this.currentLayout   = null;
-    this.currentState    = null;
-    this.screens         = {};
+    this.currentLocation  = null;
+    this.currentLayout    = null;
+    this.currentFloorData = null;
+    this.currentFloorEntry = null;
+    this.currentState     = null;
+    this.screens          = {};
     this.pendingState    = null;
 
     // Track monsters killed for quests
@@ -310,6 +314,7 @@ export class Game {
       statusEffects: [],
       worldX: 0, worldY: 0,
       locX: 0,   locY: 0,
+      currentFloor: 0,
       usedRelentless: false,
       defeatedBoss:   false,
     };
@@ -355,8 +360,11 @@ export class Game {
 
     if (!layout) return;
 
-    this.currentLocation = loc;
-    this.currentLayout   = layout;
+    this.currentLocation  = loc;
+    this.currentLayout    = layout;
+    this.currentFloorData = null;   // reset to ground floor
+    this.currentFloorEntry = null;
+    if (this.player) this.player.currentFloor = 0;
 
     // Place player at entry point
     if (layout.playerStart) {
@@ -378,8 +386,11 @@ export class Game {
   }
 
   exitLocation() {
-    this.currentLocation = null;
-    this.currentLayout   = null;
+    this.currentLocation  = null;
+    this.currentLayout    = null;
+    this.currentFloorData = null;
+    this.currentFloorEntry = null;
+    if (this.player) this.player.currentFloor = 0;
     this.changeState(STATE.WORLD_MAP);
     this.addMessage('You return to the world map.', 'normal');
   }
@@ -534,8 +545,14 @@ export class Game {
         fog:   new Uint8Array(data.world.fog),
       };
 
-      this.currentLocation = null;
-      this.currentLayout   = null;
+      this.currentLocation  = null;
+      this.currentLayout    = null;
+      this.currentFloorData = null;
+      this.currentFloorEntry = null;
+      // Ensure currentFloor is initialized on loaded player
+      if (this.player && this.player.currentFloor == null) {
+        this.player.currentFloor = 0;
+      }
 
       // Force regen of location layouts (they're lazy anyway)
       // Also reset _placed flags so guild NPCs are re-placed correctly

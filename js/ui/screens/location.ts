@@ -2,6 +2,7 @@
 import { C, COLS, ROWS, MAIN_COLS, VIEW_ROWS, STATE, LOC_TYPE, LOC_TILE } from '../../data/constants';
 import { TOWN_TILES } from '../../world/towngen';
 import { DUNGEON_TILES, isEncounterZone, getEncounterRate } from '../../world/dungeogen';
+import { computeWallChar, isWallTile } from '../../world/autotile';
 import { Menu } from '../menu';
 import { getItem, addToInventory } from '../../data/items';
 import { spawnMonster } from '../../systems/combat';
@@ -124,12 +125,18 @@ export class LocationScreen {
 
     const nx = p.locX + dx;
     const ny = p.locY + dy;
-    const w  = layout.width;
-    const h  = layout.height;
+
+    // Use active floor data (non-ground floors use currentFloorData)
+    const currentFloor = p.currentFloor || 0;
+    const activeData = (currentFloor !== 0 && this.game.currentFloorData)
+      ? this.game.currentFloorData
+      : layout;
+    const w = activeData.width;
+    const h = activeData.height;
 
     if (nx < 0 || nx >= w || ny < 0 || ny >= h) return;
 
-    const tile = layout.tiles[ny * w + nx];
+    const tile = activeData.tiles[ny * w + nx];
 
     // Can't walk through walls (any building type)
     if (WALL_TILES.has(tile)) return;
@@ -138,7 +145,7 @@ export class LocationScreen {
 
     // Door: open it
     if (tile === LOC_TILE.DOOR) {
-      layout.tiles[ny * w + nx] = LOC_TILE.DOOR_OPEN;
+      activeData.tiles[ny * w + nx] = LOC_TILE.DOOR_OPEN;
       this.game.addMessage('You open the door.', 'normal');
       return;
     }
@@ -156,8 +163,26 @@ export class LocationScreen {
       return;
     }
 
-    // Check for NPC at destination
-    const npc = layout.npcs.find(n => n.x === nx && n.y === ny);
+    // In-building/dungeon floor stairs (cyan) — ascend
+    if (tile === LOC_TILE.STAIRS_FLOOR_UP) {
+      this._changeFloor(+1, nx, ny);
+      return;
+    }
+
+    // In-building/dungeon floor stairs (cyan) — descend (may reach basement -1)
+    if (tile === LOC_TILE.STAIRS_FLOOR_DOWN) {
+      this._changeFloor(-1, nx, ny);
+      return;
+    }
+
+    // Cave water blocks movement
+    if (tile === LOC_TILE.CAVE_WATER) return;
+
+    // Check for NPC at destination (use active floor's NPC list)
+    const activeNpcList = (currentFloor !== 0 && this.game.currentFloorData)
+      ? (this.game.currentFloorData.npcs || [])
+      : (layout.npcs || []);
+    const npc = activeNpcList.find(n => n.x === nx && n.y === ny);
     if (npc) {
       this._talkToNPC(npc);
       return;
@@ -174,12 +199,16 @@ export class LocationScreen {
     p.locY = ny;
     this._stepsSinceEncounter++;
 
-    // Random encounter check in dungeons
+    // Random encounter check in dungeons and building basements
     const loc = this.game.currentLocation;
-    if (loc && loc.type !== LOC_TYPE.TOWN && loc.type !== 'SHRINE') {
-      if (isEncounterZone(layout, nx, ny)) {
-        const rate = getEncounterRate(layout, nx, ny);
-        if (this._stepsSinceEncounter >= 3 && this.game.rng.chance(rate * 0.3)) {
+    const inBasement = currentFloor < 0;
+    if (loc && (loc.type !== LOC_TYPE.TOWN || inBasement) && loc.type !== 'SHRINE') {
+      const activeData = this.game.currentFloorData || layout;
+      if (isEncounterZone(activeData, nx, ny)) {
+        const baseRate = getEncounterRate(activeData, nx, ny);
+        // Basements have much lower encounter rate than open dungeons
+        const effectiveRate = inBasement ? baseRate * 0.2 : baseRate;
+        if (this._stepsSinceEncounter >= 3 && this.game.rng.chance(effectiveRate * 0.3)) {
           this._stepsSinceEncounter = 0;
           this.game.triggerDungeonEncounter(loc.dangerLevel || 1);
           return;
@@ -188,7 +217,7 @@ export class LocationScreen {
     }
 
     // Check for boss NPC
-    const bossNpc = layout.npcs.find(n => n.x === nx && n.y === ny && n.isBoss);
+    const bossNpc = activeNpcList.find(n => n.x === nx && n.y === ny && n.isBoss);
     if (bossNpc && !bossNpc.defeated) {
       this._startBossFight(bossNpc);
       return;
@@ -219,10 +248,71 @@ export class LocationScreen {
       }
       if (tile === LOC_TILE.STAIRS_UP) { this.game.exitLocation(); return; }
       if (tile === LOC_TILE.STAIRS_DOWN) { this.game.addMessage('You find a hidden exit to the surface.', 'normal'); this.game.exitLocation(); return; }
+      if (tile === LOC_TILE.STAIRS_FLOOR_UP) { this._changeFloor(+1, nx, ny); return; }
+      if (tile === LOC_TILE.STAIRS_FLOOR_DOWN) { this._changeFloor(-1, nx, ny); return; }
       if (tile === LOC_TILE.ALTAR)     { this.game.addMessage('The altar hums with power.', 'normal'); return; }
     }
 
     this.game.addMessage('There is nothing nearby to interact with.', 'normal');
+  }
+
+  // Change floor by delta (+1 = ascend, -1 = descend/basement)
+  // stairX/stairY is the tile the player is standing on
+  _changeFloor(delta, stairX, stairY) {
+    const layout = this.game.currentLayout;
+    const p = this.game.player;
+    if (!layout || !p) return;
+
+    const nextFloor = (p.currentFloor || 0) + delta;
+
+    if (nextFloor === 0) {
+      // Returning to ground floor — clear floor overrides
+      const prevEntry = this.game.currentFloorEntry; // capture before clearing
+      p.currentFloor = 0;
+      this.game.currentFloorData  = null;
+      this.game.currentFloorEntry = null;
+      // Land at the ground-floor stair position (world coordinates)
+      if (prevEntry) {
+        const stairWorldX = prevEntry.bx + Math.floor(prevEntry.bw / 2);
+        // delta > 0 means we came from upper floor → landed near top-interior stair
+        // delta < 0 means we came from basement → landed near bottom-interior stair
+        const stairWorldY = delta > 0
+          ? prevEntry.by + 2          // one step below the top-interior STAIRS_FLOOR_UP
+          : prevEntry.by + prevEntry.bh - 3; // one step above the bottom-interior STAIRS_FLOOR_DOWN
+        p.locX = stairWorldX;
+        p.locY = stairWorldY;
+      }
+      this._stepsSinceEncounter = 0;
+      this.game.addMessage('You return to the ground floor.', 'normal');
+      return;
+    }
+
+    // Find the matching BuildingFloorEntry
+    const entry = (layout.buildingFloors || []).find(
+      e => e.floorIndex === nextFloor &&
+           stairX >= e.bx && stairX < e.bx + e.bw &&
+           stairY >= e.by && stairY < e.by + e.bh
+    );
+
+    if (!entry) {
+      // No floor found — stair is decorative or unconnected
+      return;
+    }
+
+    p.currentFloor = nextFloor;
+    this.game.currentFloorData  = entry.floorData;
+    this.game.currentFloorEntry = entry;
+    p.locX = entry.floorData.playerStart.x;
+    p.locY = entry.floorData.playerStart.y;
+    this._stepsSinceEncounter = 0;
+
+    if (nextFloor < 0) {
+      this.game.addMessage('You descend into the basement.', 'normal');
+    } else if (delta > 0) {
+      this.game.addMessage(`You climb to floor ${nextFloor + 1}.`, 'normal');
+    } else {
+      this.game.addMessage(nextFloor === 0 ? 'You return to the ground floor.' : `You descend to floor ${nextFloor + 1}.`, 'normal');
+    }
   }
 
   _talkToNPC(npc) {
@@ -252,11 +342,16 @@ export class LocationScreen {
 
   _openChest(x, y) {
     const layout = this.game.currentLayout;
-    const chest  = layout.chests?.find(c => c.x === x && c.y === y && !c.opened);
+    const p = this.game.player;
+    const currentFloor = p?.currentFloor || 0;
+    const activeData = (currentFloor !== 0 && this.game.currentFloorData)
+      ? this.game.currentFloorData
+      : layout;
+    const chest = activeData.chests?.find(c => c.x === x && c.y === y && !c.opened);
     if (!chest) { this.game.addMessage('The chest is empty.', 'normal'); return; }
 
     chest.opened = true;
-    layout.tiles[y * layout.width + x] = LOC_TILE.CHEST_OPEN;
+    activeData.tiles[y * activeData.width + x] = LOC_TILE.CHEST_OPEN;
 
     // Generate loot based on tier
     const lootTable = [
@@ -302,25 +397,59 @@ export class LocationScreen {
     const vx = Math.floor(VIEW_W / 2);
     const vy = Math.floor(VIEW_H / 2);
 
+    // Active floor data: use currentFloorData when on non-ground floors
+    const currentFloor = p.currentFloor || 0;
+    const activeFloorData = (currentFloor !== 0 && this.game.currentFloorData)
+      ? this.game.currentFloorData
+      : null; // null = use layout directly
+    const activeTiles  = activeFloorData ? activeFloorData.tiles  : layout.tiles;
+    const activeWidth  = activeFloorData ? activeFloorData.width  : layout.width;
+    const activeHeight = activeFloorData ? activeFloorData.height : layout.height;
+
+    // For floor dimming: bounding box of the current building floor
+    // (tiles outside this box get dimmed on non-ground floors)
+    let dimBox = null;
+    if (currentFloor !== 0 && this.game.currentFloorEntry) {
+      const e = this.game.currentFloorEntry;
+      dimBox = { x: e.bx, y: e.by, w: e.bw, h: e.bh };
+    }
+
     // Draw tiles
     for (let row = 0; row < VIEW_H; row++) {
       for (let col = 0; col < VIEW_W; col++) {
         const lx = p.locX + (col - vx);
         const ly = p.locY + (row - vy);
 
-        if (lx < 0 || lx >= layout.width || ly < 0 || ly >= layout.height) {
+        if (lx < 0 || lx >= activeWidth || ly < 0 || ly >= activeHeight) {
           renderer.set(col, row, ' ', C.BLACK, C.BLACK);
           continue;
         }
 
-        const tile = layout.tiles[ly * layout.width + lx];
-        const td   = tileSet[tile] || { char: '?', fg: C.RED, bg: C.BLACK };
+        const tile = activeTiles[ly * activeWidth + lx];
+        let td = tileSet[tile] || { char: '?', fg: C.RED, bg: C.BLACK };
+
+        // Auto-tile: replace wall character with context-aware box-drawing char
+        if (isWallTile(tile)) {
+          const wallChar = computeWallChar(activeTiles, lx, ly, activeWidth, activeHeight, isWallTile);
+          td = { char: wallChar, fg: td.fg, bg: td.bg ?? C.BLACK };
+        }
+
+        // Floor dimming: when not on ground floor, dim tiles outside the building box
+        if (currentFloor !== 0 && dimBox) {
+          const insideBuilding = lx >= dimBox.x && lx < dimBox.x + dimBox.w &&
+                                 ly >= dimBox.y && ly < dimBox.y + dimBox.h;
+          if (!insideBuilding) {
+            td = { char: td.char, fg: C.DARK_GRAY, bg: C.BLACK };
+          }
+        }
+
         renderer.set(col, row, td.char, td.fg, td.bg ?? C.BLACK);
       }
     }
 
-    // Draw NPCs
-    for (const npc of (layout.npcs || [])) {
+    // Draw NPCs (use active floor's NPC list when off ground floor)
+    const activeNpcs = activeFloorData ? activeFloorData.npcs : (layout.npcs || []);
+    for (const npc of activeNpcs) {
       const sc = npc.x - p.locX + vx;
       const sr = npc.y - p.locY + vy;
       if (sc < 0 || sc >= VIEW_W || sr < 0 || sr >= VIEW_H) continue;
