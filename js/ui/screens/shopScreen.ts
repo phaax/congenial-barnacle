@@ -92,7 +92,6 @@ export class ShopScreen {
       return;
     }
 
-    const buyPrice = this._buyPrice(item);
     this._confirm = new Confirm(
       `Buy ${item.name} for ${buyPrice}g?`,
       () => { this._executeBuy(item); this._confirm = null; },
