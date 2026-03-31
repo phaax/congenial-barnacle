@@ -396,6 +396,7 @@ export interface Item {
   desc: string;
   tier: number;
   prop?: string;
+  region?: string;   // 'mountain' | 'forest' | 'desert' | 'swamp' | 'plains' | 'arctic' | 'coastal'
   cursed?: boolean;
   effect?: string;
   heal?: number;

@@ -7,6 +7,23 @@ import { NPC_NAMES, INN_NAMES } from '../data/dialog';
 import { generateTown } from './towngen';
 import { generateDungeon } from './dungeogen';
 
+// Map world biome tile IDs to regional flavour strings used for shop inventory filtering
+function biomeToRegion(biomeId) {
+  const map = {
+    7:  'mountain', // MOUNTAINS
+    8:  'mountain', // PEAK
+    6:  'mountain', // HILLS
+    4:  'forest',   // FOREST
+    5:  'forest',   // DENSE_FOREST
+    9:  'desert',   // DESERT
+    12: 'swamp',    // SWAMP
+    10: 'arctic',   // TUNDRA
+    11: 'arctic',   // SNOW
+    2:  'coastal',  // BEACH
+  };
+  return map[biomeId] || 'plains';
+}
+
 // Simple value noise for terrain generation
 function valueNoise(rng, w, h, scale) {
   const grid = new Float32Array(w * h);
@@ -209,6 +226,7 @@ export function generateWorld(seed) {
       if (type === LOC_TYPE.TOWN) {
         loc.tier = Math.floor(rng.float(1, 3.5));
         loc.innName = rng.pick(INN_NAMES);
+        loc.region = biomeToRegion(tiles[y * W + x]);
         loc.layout = null; // generated lazily
       } else {
         loc.dangerLevel = rng.int(1, 4);

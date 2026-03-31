@@ -568,6 +568,7 @@ function buildingNPCs(rng, building, loc) {
         id: `bar_${building.x}`, name: barName,
         type: 'barkeep', pool: 'barkeep',
         isShopkeeper: true, shopRole: 'tavern', shopTier: tier,
+        shopRegion: loc.region || null,
         shopLabel: 'The Tavern Bar',
       });
       npcs.push({ id: `vil_${building.x}`, name: rng.pick(NPC_NAMES.villager), type: 'villager', pool: 'villager' });
@@ -578,6 +579,7 @@ function buildingNPCs(rng, building, loc) {
         id: `shop_${building.x}`, name: rng.pick(NPC_NAMES.shopkeeper),
         type: 'shopkeeper', pool: 'shopkeeper',
         isShopkeeper: true, shopRole: 'general', shopTier: tier,
+        shopRegion: loc.region || null,
         shopLabel: 'General Store',
       });
       break;
@@ -586,6 +588,7 @@ function buildingNPCs(rng, building, loc) {
         id: `heal_${building.x}`, name: rng.pick(NPC_NAMES.healer),
         type: 'healer', pool: 'healer',
         isShopkeeper: true, shopRole: 'healer', shopTier: tier,
+        shopRegion: loc.region || null,
         shopLabel: 'Healer\'s Supplies',
       });
       break;
@@ -594,6 +597,7 @@ function buildingNPCs(rng, building, loc) {
         id: `temp_${building.x}`, name: rng.pick(NPC_NAMES.healer),
         type: 'healer', pool: 'healer',
         isShopkeeper: true, shopRole: 'healer', shopTier: tier,
+        shopRegion: loc.region || null,
         shopLabel: 'Temple Stores',
       });
       break;
@@ -616,6 +620,7 @@ function buildingNPCs(rng, building, loc) {
         id: `smith_${building.x}`, name: rng.pick(NPC_NAMES.shopkeeper),
         type: 'shopkeeper', pool: 'shopkeeper',
         isShopkeeper: true, shopRole: 'blacksmith', shopTier: tier,
+        shopRegion: loc.region || null,
         shopLabel: 'Blacksmith\'s Forge',
       });
       break;

@@ -59,7 +59,7 @@ export const BACKGROUNDS = [
     startingGold: 25,
     startingItems: [
       { id: 'short_bow',    qty: 1 },
-      { id: 'arrow',        qty: 20 },
+      { id: 'sling',        qty: 1 },
       { id: 'hunting_knife', qty: 1 },
       { id: 'travel_rations', qty: 3 },
     ],
