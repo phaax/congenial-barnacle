@@ -25,7 +25,8 @@ export class ShopScreen {
 
     const tier     = this.npc?.shopTier || 1;
     const role     = this.npc?.shopRole || 'general';
-    this.shopItems = getShopInventoryByRole(role, tier);
+    const region   = this.npc?.shopRegion || null;
+    this.shopItems = getShopInventoryByRole(role, tier, region);
 
     this.buyList.setItems(this.shopItems, 14);
     this.buyList.onSelect = () => {};
@@ -50,6 +51,18 @@ export class ShopScreen {
     return Object.values(eq).includes(invItem.id);
   }
 
+  _hasBargaining() {
+    return this.game.player?.skills?.includes('bargaining');
+  }
+
+  _buyPrice(item) {
+    return this._hasBargaining() ? Math.floor(item.value * 0.85) : item.value;
+  }
+
+  _sellPrice(item) {
+    return Math.max(1, Math.floor(item.value * (this._hasBargaining() ? 0.65 : 0.5)));
+  }
+
   _requestBuy() {
     const player = this.game.player;
     if (!player) return;
@@ -57,8 +70,9 @@ export class ShopScreen {
     const item = this.shopItems[this.buyList.selected];
     if (!item) return;
 
-    if (player.gold < item.value) {
-      this.message = `Not enough gold! Need ${item.value}g.`;
+    const buyPrice = this._buyPrice(item);
+    if (player.gold < buyPrice) {
+      this.message = `Not enough gold! Need ${buyPrice}g.`;
       this.messageColor = C.RED;
       return;
     }
@@ -78,8 +92,9 @@ export class ShopScreen {
       return;
     }
 
+    const buyPrice = this._buyPrice(item);
     this._confirm = new Confirm(
-      `Buy ${item.name} for ${item.value}g?`,
+      `Buy ${item.name} for ${buyPrice}g?`,
       () => { this._executeBuy(item); this._confirm = null; },
       () => { this._confirm = null; }
     );
@@ -88,7 +103,7 @@ export class ShopScreen {
   _executeBuy(item) {
     const player = this.game.player;
     if (!player) return;
-    player.gold -= item.value;
+    player.gold -= this._buyPrice(item);
 
     if (item.id === 'local_map') {
       const loc = this.game.currentLocation;
@@ -106,7 +121,7 @@ export class ShopScreen {
 
     addToInventory(player, item.id, 1);
     this._refreshSellList();
-    this.message = `Bought ${item.name} for ${item.value}g.`;
+    this.message = `Bought ${item.name} for ${this._buyPrice(item)}g.`;
     this.messageColor = C.GREEN;
     this.game.addMessage(`Bought ${item.name}.`, 'normal');
   }
@@ -131,7 +146,7 @@ export class ShopScreen {
       return;
     }
 
-    const price = Math.max(1, Math.floor(item.value * 0.5));
+    const price = this._sellPrice(item);
     const label = sellableQty > 1 ? `Sell 1x ${item.name} for ${price}g?` : `Sell ${item.name} for ${price}g?`;
     this._confirm = new Confirm(
       label,
@@ -280,7 +295,7 @@ export class ShopScreen {
         const equipped     = this.mode === 'sell' && this._isEquipped(entry);
         const sellableQty  = this.mode === 'sell' ? (entry.qty - (equipped ? 1 : 0)) : null;
         const unavailable  = this.mode === 'sell' && equipped && sellableQty <= 0;
-        const price        = this.mode === 'buy' ? item.value : Math.max(1, Math.floor(item.value * 0.5));
+        const price        = this.mode === 'buy' ? this._buyPrice(item) : this._sellPrice(item);
         const priceStr     = unavailable ? ' (eq)' : `${price}g`.padStart(6);
         const qtyStr       = this.mode === 'sell' && entry.qty > 1 ? ` x${sellableQty}` : '';
         const nameWidth    = width - 11 - qtyStr.length;
@@ -307,8 +322,8 @@ export class ShopScreen {
         if (item.mp)   renderer.write(42, dr++, `MP:    +${item.mp}`,                   C.CYAN,  C.BLACK);
         dr++;
 
-        const buyPrice  = item.value;
-        const sellPrice = Math.max(1, Math.floor(item.value * 0.5));
+        const buyPrice  = this._buyPrice(item);
+        const sellPrice = this._sellPrice(item);
         renderer.write(42, dr++, `Buy:  ${buyPrice}g`,  C.WHITE,  C.BLACK);
         renderer.write(42, dr++, `Sell: ${sellPrice}g`, C.YELLOW, C.BLACK);
         dr++;

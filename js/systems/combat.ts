@@ -58,7 +58,7 @@ export function spawnEncounter(biome, dangerLevel, rng) {
 // ─── Combat State ────────────────────────────────────────────────────────────
 
 export function initCombat(player, monsters, biome, rng) {
-  return {
+  const combat = {
     state:      COMBAT_STATE.PLAYER_TURN,
     player,
     monsters,
@@ -71,6 +71,29 @@ export function initCombat(player, monsters, biome, rng) {
     // For multi-enemy, current target
     targetIdx:  0,
   };
+
+  // Tracking: +3 initiative — 30% chance to surprise enemies and skip their first attack
+  if (player.skills && player.skills.includes('tracking')) {
+    const surpriseChance = 30 + Math.max(0, (player.stats.dex - 10));
+    if (rng.chance(surpriseChance)) {
+      combat.log.push({ msg: 'Your tracking skills let you spot the enemy first — they are surprised!', type: 'system' });
+      combat._enemySurprised = true;
+    }
+  }
+
+  // Archery firstStrikeChance: 30% chance to get the jump on enemies with a ranged weapon
+  if (!combat._enemySurprised && player.skills && player.skills.includes('archery')) {
+    const weapon = player.equipment?.weapon;
+    const wItem  = weapon ? player.inventory.find(i => i.id === weapon) : null;
+    // Check if equipped weapon has ranged prop via item data (import may not be available here;
+    // use a simple check — archery applies even without item data)
+    if (rng.chance(30)) {
+      combat.log.push({ msg: 'Archery training: you draw and fire before the enemy can react!', type: 'system' });
+      combat._enemySurprised = true;
+    }
+  }
+
+  return combat;
 }
 
 // Get active monster (first alive)
@@ -301,9 +324,26 @@ export function playerUseAbility(combat, abilityId) {
       return advanceToEnemyTurn(combat);
     }
 
-    case 'forage':
-      logMsg(combat, 'Cannot forage during combat!', 'system');
-      return; // Don't advance turn
+    case 'forage': {
+      if (combat._forageUsed) {
+        logMsg(combat, 'You have already foraged in this area.', 'system');
+        return;
+      }
+      combat._forageUsed = true;
+      // Herbalism passive: find 1-3 healing herbs based on skill and DEX
+      const herbCount = 1 + (hasSkill(player, 'herbalism') ? rng.int(0, 2) : 0);
+      let added = 0;
+      for (let h = 0; h < herbCount; h++) {
+        if (player.inventory.length < 20) {
+          const existing = player.inventory.find(i => i.id === 'healing_herb');
+          if (existing) { existing.qty += 1; }
+          else { player.inventory.push({ id: 'healing_herb', qty: 1 }); }
+          added++;
+        }
+      }
+      logMsg(combat, added > 0 ? `You forage the area and find ${added} Healing Herb${added > 1 ? 's' : ''}.` : 'Your inventory is full — no room for herbs.', 'system');
+      return; // Forage does not consume a combat turn
+    }
 
     case 'backstab':
       logMsg(combat, 'Backstab triggers automatically on the first turn.', 'system');
@@ -393,6 +433,13 @@ function advanceToEnemyTurn(combat) {
   combat.state = COMBAT_STATE.ENEMY_TURN;
   const monster = getActiveMonster(combat);
   if (!monster) return checkVictory(combat);
+
+  // Tracking/Archery surprise: skip enemy's very first attack
+  if (combat._enemySurprised && combat.turn === 1) {
+    combat._enemySurprised = false;
+    combat.state = COMBAT_STATE.PLAYER_TURN;
+    return;
+  }
 
   // Process status effects first
   processMonsterStatus(combat, monster);
@@ -630,15 +677,17 @@ function checkVictory(combat) {
     // Calculate total rewards
     combat.totalXp   = combat.monsters.reduce((sum, m) => sum + m.xp, 0);
     combat.totalGold = combat.monsters.reduce((sum, m) => sum + m.gold, 0);
-    combat.lootItems = collectLoot(combat.monsters, combat.rng);
+    combat.lootItems = collectLoot(combat.monsters, combat.player, combat.rng);
   }
 }
 
-function collectLoot(monsters, rng) {
+function collectLoot(monsters, player, rng) {
   const items = [];
+  // Lockpicking passive: +15% chance on each drop
+  const lootMult = hasSkill(player, 'lockpicking') ? 1.15 : 1.0;
   for (const m of monsters) {
     for (const drop of (m.loot || [])) {
-      if (rng.chance(drop.chance)) {
+      if (rng.chance(Math.min(100, drop.chance * lootMult))) {
         items.push(drop.id);
       }
     }
