@@ -25,7 +25,9 @@ export class InnScreen {
   _buildMenu() {
     const player = this.game.player;
     const hpMissing = player ? player.maxHp - player.hp : 0;
-    const cost = Math.max(REST_MIN_COST, hpMissing * REST_COST_PER_HP);
+    const hasHealingArts = player?.skills?.includes('healing');
+    const costMult = hasHealingArts ? 0.75 : 1.0;
+    const cost = Math.max(REST_MIN_COST, Math.floor(hpMissing * REST_COST_PER_HP * costMult));
 
     this.menu = new Menu([
       { label: `Rest & Heal  (${cost}g)`, key: 'r' },

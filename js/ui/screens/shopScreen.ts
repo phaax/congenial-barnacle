@@ -56,11 +56,17 @@ export class ShopScreen {
   }
 
   _buyPrice(item) {
-    return this._hasBargaining() ? Math.floor(item.value * 0.85) : item.value;
+    let price = item.value;
+    if (this._hasBargaining()) price = Math.floor(price * 0.85);
+    if (this.game.player?.race === 'halfling') price = Math.floor(price * 0.90);
+    return price;
   }
 
   _sellPrice(item) {
-    return Math.max(1, Math.floor(item.value * (this._hasBargaining() ? 0.65 : 0.5)));
+    let price = Math.floor(item.value * 0.5);
+    if (this._hasBargaining()) price = Math.floor(item.value * 0.65);
+    if (this.game.player?.race === 'halfling') price = Math.floor(price * 1.10);
+    return Math.max(1, price);
   }
 
   _requestBuy() {

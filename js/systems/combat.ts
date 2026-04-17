@@ -70,6 +70,7 @@ export function initCombat(player, monsters, biome, rng) {
     bossMode:   monsters.some(m => m.isBoss),
     // For multi-enemy, current target
     targetIdx:  0,
+    _secondWindUsed: false,
   };
 
   // Tracking: +3 initiative — 30% chance to surprise enemies and skip their first attack
@@ -171,6 +172,9 @@ export function playerAttack(combat, abilityId = null) {
 
     // Dwarf trait: enemy damage reduced
     if (player.race === 'dwarf') dmg = Math.max(1, dmg - 1);
+
+    // Halfling small size: reduced melee damage output
+    if (player.race === 'halfling') dmg = Math.max(1, dmg - 1);
 
     monster.hp -= dmg;
     const critText = crit ? ' (CRITICAL HIT!)' : '';
@@ -369,6 +373,7 @@ export function playerUseItem(combat, itemId) {
     let healAmt = item.heal;
     if (hasSkill(player, 'healing')) healAmt = Math.floor(healAmt * 1.5);
     if (hasSkill(player, 'herbalism') && item.id === 'healing_herb') healAmt = Math.floor(healAmt * 1.2);
+    if (player.race === 'dwarf') healAmt = Math.floor(healAmt * 1.25);
     player.hp = Math.min(player.maxHp, player.hp + healAmt);
     logMsg(combat, `You use ${item.name} and recover ${healAmt} HP.`);
   }
@@ -514,7 +519,13 @@ function monsterAttack(combat, monster) {
     return;
   }
 
-  const baseDmg = rng.int(monster.atk[0], monster.atk[1]);
+  let baseDmg = rng.int(monster.atk[0], monster.atk[1]);
+  // Apply battle_cry bonus if active
+  if (monster._atkBonus && monster._atkBonusTurns > 0) {
+    baseDmg += monster._atkBonus;
+    monster._atkBonusTurns--;
+    if (monster._atkBonusTurns <= 0) monster._atkBonus = 0;
+  }
   const playerDef = getPlayerDefense(player);
   let dmg = Math.max(1, baseDmg - playerDef);
 
@@ -556,12 +567,17 @@ function monsterAttack(combat, monster) {
   logMsg(combat, `${monster.name} attacks you for ${dmg} damage.`);
 
   // Apply status effects from attack
+  const statusResist = hasSkill(player, 'fortitude') ? 25 : 0;
   for (const ability of (monster.abilities || [])) {
     if (ability.id === 'poison' && rng.chance(ability.chance)) {
-      player.statusEffects = player.statusEffects || [];
-      if (!player.statusEffects.find(s => s.type === 'poison')) {
-        player.statusEffects.push({ type: 'poison', turns: 3, dmg: 1 });
-        logMsg(combat, `You are poisoned!`);
+      if (statusResist > 0 && rng.chance(statusResist)) {
+        logMsg(combat, `Your fortitude resists the poison!`);
+      } else {
+        player.statusEffects = player.statusEffects || [];
+        if (!player.statusEffects.find(s => s.type === 'poison')) {
+          player.statusEffects.push({ type: 'poison', turns: 3, dmg: 1 });
+          logMsg(combat, `You are poisoned!`);
+        }
       }
     }
     if (ability.id === 'drain') {
@@ -570,12 +586,20 @@ function monsterAttack(combat, monster) {
       logMsg(combat, `${monster.name} drains ${drain} HP from you!`);
     }
     if (ability.id === 'trip' && rng.chance(ability.chance)) {
-      combat.playerSkipTurn = true;
-      logMsg(combat, `You are tripped! You lose your next turn.`);
+      if (statusResist > 0 && rng.chance(statusResist)) {
+        logMsg(combat, `Your fortitude keeps you on your feet!`);
+      } else {
+        combat.playerSkipTurn = true;
+        logMsg(combat, `You are tripped! You lose your next turn.`);
+      }
     }
     if (ability.id === 'corruption' && rng.chance(ability.chance)) {
-      player.maxHp = Math.max(1, player.maxHp - 10);
-      logMsg(combat, `${monster.name} corrupts your life force! Max HP reduced by 10.`);
+      if (statusResist > 0 && rng.chance(statusResist)) {
+        logMsg(combat, `Your fortitude resists the corruption!`);
+      } else {
+        player.maxHp = Math.max(1, player.maxHp - 10);
+        logMsg(combat, `${monster.name} corrupts your life force! Max HP reduced by 10.`);
+      }
     }
   }
 }
@@ -638,7 +662,22 @@ function executeMonsterAbility(combat, monster, ability) {
 }
 
 function processMonsterStatus(combat, monster) {
-  // Process monster status effects
+  if (!monster.statusEffects) return;
+  monster.statusEffects = monster.statusEffects.filter(s => {
+    if (s.type === 'poison') {
+      monster.hp -= s.dmg;
+      logMsg(combat, `${monster.name} takes ${s.dmg} poison damage.`);
+      s.turns--;
+      if (s.turns <= 0) {
+        logMsg(combat, `The poison on ${monster.name} wears off.`);
+        return false;
+      }
+    }
+    return true;
+  });
+  if (monster.hp <= 0) {
+    resolveMonsterDeath(combat, monster);
+  }
 }
 
 function processPlayerStatus(player, log) {
@@ -739,6 +778,12 @@ export function applyRewards(player, combat) {
     player.maxMp += 3;
     player.mp = player.maxMp;
     leveled = true;
+    // Human adaptable: +1 to a random stat each level
+    if (player.race === 'human') {
+      const stats = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
+      const statKey = stats[combat.rng.int(0, stats.length - 1)];
+      player.stats[statKey]++;
+    }
   }
 
   return { xpGained, leveled, loot };
