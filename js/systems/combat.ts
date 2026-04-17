@@ -781,7 +781,7 @@ export function applyRewards(player, combat) {
     // Human adaptable: +1 to a random stat each level
     if (player.race === 'human') {
       const stats = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
-      const statKey = stats[Math.floor(Math.random() * stats.length)];
+      const statKey = stats[combat.rng.int(0, stats.length - 1)];
       player.stats[statKey]++;
     }
   }
