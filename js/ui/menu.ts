@@ -34,24 +34,29 @@ export class Menu {
   }
 
   handleKey(e) {
-    if (e.key === 'ArrowUp'   || e.key === 'w' || e.key === 'k') { e.preventDefault(); this.moveUp();   return true; }
-    if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'j') { e.preventDefault(); this.moveDown(); return true; }
+    // Explicit option shortcuts take priority so they aren't shadowed by navigation keys
+    for (let i = 0; i < this.options.length; i++) {
+      const opt = this.options[i];
+      if (opt.disabled) continue;
+      if (opt.key && e.key.toLowerCase() === opt.key.toLowerCase()) {
+        e.preventDefault();
+        this.selected = i;
+        this.activate();
+        return true;
+      }
+    }
+    if (e.key === 'ArrowUp'   || e.key === 'w') { e.preventDefault(); this.moveUp();   return true; }
+    if (e.key === 'ArrowDown' || e.key === 's') { e.preventDefault(); this.moveDown(); return true; }
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       this.activate();
       return true;
     }
-    // Key shortcuts: match first char of option label
+    // Auto-shortcut: first letter of option label (for options without an explicit key)
     for (let i = 0; i < this.options.length; i++) {
       const opt = this.options[i];
-      if (opt.disabled) continue;
-      if (opt.key && e.key.toLowerCase() === opt.key.toLowerCase()) {
-        this.selected = i;
-        this.activate();
-        return true;
-      }
-      // Auto-shortcut: first letter
-      if (!opt.key && opt.label && e.key.toLowerCase() === opt.label[0]?.toLowerCase()) {
+      if (opt.disabled || opt.key) continue;
+      if (opt.label && e.key.toLowerCase() === opt.label[0]?.toLowerCase()) {
         this.selected = i;
         this.activate();
         return true;
