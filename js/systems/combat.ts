@@ -136,8 +136,9 @@ export function playerAttack(combat, abilityId = null) {
       baseDmg = rng.int(1, 4);
     }
 
-    // Stat bonus
-    const strBonus = Math.floor((player.stats.str - 10) / 2);
+    // Stat bonus (includes temporary STR boost from potions)
+    const strActive = player.stats.str + ((combat._strBoostTurns > 0) ? (combat._strBoostAmt || 0) : 0);
+    const strBonus = Math.floor((strActive - 10) / 2);
     baseDmg = Math.max(1, baseDmg + strBonus);
 
     // Skill modifiers
@@ -169,6 +170,11 @@ export function playerAttack(combat, abilityId = null) {
 
     // Defense reduction
     dmg = Math.max(1, baseDmg - monster.def);
+
+    // Fire damage bonus from Ring of Fire or similar accessories
+    if (player._fireDmgBonus > 0) {
+      dmg += player._fireDmgBonus;
+    }
 
     // Dwarf trait: enemy damage reduced
     if (player.race === 'dwarf') dmg = Math.max(1, dmg - 1);
@@ -386,6 +392,13 @@ export function playerUseItem(combat, itemId) {
     player.mp = player.maxMp;
     logMsg(combat, `You drink the ${item.name}. Full health and magic restored!`);
   }
+  if (item.effect === 'str_boost') {
+    const boostAmt = 2;
+    const boostTurns = 5;
+    combat._strBoostTurns = (combat._strBoostTurns || 0) + boostTurns;
+    combat._strBoostAmt   = (combat._strBoostAmt   || 0) + boostAmt;
+    logMsg(combat, `You drink the ${item.name}. Strength surges through you! (+${boostAmt} STR for ${boostTurns} turns)`);
+  }
   if (item.flee) {
     combat.fleeing = true;
     logMsg(combat, 'You throw a smoke bomb and run!');
@@ -449,6 +462,12 @@ function advanceToEnemyTurn(combat) {
   // Process status effects first
   processMonsterStatus(combat, monster);
   if (combat.state !== COMBAT_STATE.ENEMY_TURN) return;
+
+  // Boss phase 2: trigger when HP drops below 50%
+  if (monster.isBoss && monster.currentPhase === 0 && monster.hp < monster.maxHp * 0.5) {
+    monster.currentPhase = 1;
+    logMsg(combat, `${monster.name} enters a RAGE! Its attacks grow far more powerful!`, 'system');
+  }
 
   // Frozen monsters skip turn
   const frozen = monster.statusEffects?.find(s => s.type === 'frozen');
@@ -526,6 +545,10 @@ function monsterAttack(combat, monster) {
     monster._atkBonusTurns--;
     if (monster._atkBonusTurns <= 0) monster._atkBonus = 0;
   }
+  // Phase 2 rage: boss deals 30% more damage
+  if (monster.isBoss && monster.currentPhase >= 1) {
+    baseDmg = Math.floor(baseDmg * 1.3);
+  }
   const playerDef = getPlayerDefense(player);
   let dmg = Math.max(1, baseDmg - playerDef);
 
@@ -543,11 +566,12 @@ function monsterAttack(combat, monster) {
     if (absorbed > 0) logMsg(combat, `Your magic shield absorbs ${absorbed} damage.`);
   }
 
-  // Halfling dodge bonus
+  // Dodge chance (race traits, skills, luck bonus from accessories)
   let dodgeChance = 0;
   if (player.race === 'halfling') dodgeChance += 15;
   if (hasSkill(player, 'stealth'))    dodgeChance += 10;
   if (player.race === 'elf')          dodgeChance += 10;
+  dodgeChance += player._luckBonus || 0;
   if (rng.chance(dodgeChance)) {
     logMsg(combat, `${monster.name} attacks but you dodge!`);
     return;
@@ -628,25 +652,29 @@ function executeMonsterAbility(combat, monster, ability) {
       break;
     }
     case 'fire_breath': {
-      const dmg = rng.roll(3, 8);
+      const phase2 = monster.isBoss && monster.currentPhase >= 1;
+      const dmg = phase2 ? rng.roll(4, 12) : rng.roll(3, 8);
       player.hp -= dmg;
       logMsg(combat, `${monster.name} breathes fire! You take ${dmg} fire damage!`);
       break;
     }
     case 'inferno': {
-      const dmg = rng.roll(5, 10);
+      const phase2 = monster.isBoss && monster.currentPhase >= 1;
+      const dmg = phase2 ? rng.roll(7, 15) : rng.roll(5, 10);
       player.hp -= dmg;
       logMsg(combat, `${monster.name} unleashes INFERNO! ${dmg} fire damage!`);
       break;
     }
     case 'death_bolt': {
-      const dmg = rng.roll(4, 10);
+      const phase2 = monster.isBoss && monster.currentPhase >= 1;
+      const dmg = phase2 ? rng.roll(6, 15) : rng.roll(4, 10);
       player.hp -= dmg;
       logMsg(combat, `The Lich fires a death bolt! You take ${dmg} necrotic damage!`);
       break;
     }
     case 'drain_life': {
-      const drain = 20;
+      const phase2 = monster.isBoss && monster.currentPhase >= 1;
+      const drain = phase2 ? 30 : 20;
       player.hp -= drain;
       monster.hp = Math.min(monster.maxHp, monster.hp + drain);
       logMsg(combat, `The Lich drains ${drain} HP from your life force!`);
@@ -750,6 +778,12 @@ function getPlayerDefense(player) {
     const offhand = getItem(player.equipment.offhand);
     if (offhand) def += offhand.def || 0;
   }
+  if (player.equipment.helmet) {
+    const helmet = getItem(player.equipment.helmet);
+    if (helmet) def += helmet.def || 0;
+  }
+  // Accessory def2 bonus (Ring of Protection, etc.)
+  def += player._bonusDef || 0;
   return Math.max(0, def);
 }
 
@@ -801,9 +835,18 @@ export function xpToLevel(level) {
   return level * (level + 1) * 30;
 }
 
-// Process beginning-of-player-turn effects (poison, etc.)
+// Process beginning-of-player-turn effects (poison, str boost, etc.)
 export function startPlayerTurn(combat) {
   processPlayerStatus(combat.player, combat.log);
+
+  // Decrement strength boost counter
+  if (combat._strBoostTurns > 0) {
+    combat._strBoostTurns--;
+    if (combat._strBoostTurns === 0) {
+      combat._strBoostAmt = 0;
+      combat.log.push({ msg: 'The strength boost wears off.', type: 'system' });
+    }
+  }
 
   if (combat.playerSkipTurn) {
     combat.playerSkipTurn = false;

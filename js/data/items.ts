@@ -229,3 +229,61 @@ export function addToInventory(player, itemId, qty = 1) {
     player.inventory.push({ id: itemId, qty });
   }
 }
+
+// Apply equipment effect to player stats when an item is equipped.
+export function applyItemEffect(player, item) {
+  if (!item?.effect) return;
+  switch (item.effect) {
+    case 'hp10':      player.maxHp += 10; player.hp = Math.min(player.hp + 10, player.maxHp); break;
+    case 'hp15':      player.maxHp += 15; player.hp = Math.min(player.hp + 15, player.maxHp); break;
+    case 'mp8':       player.maxMp += 8;  player.mp  = Math.min((player.mp  || 0) + 8,  player.maxMp);  break;
+    case 'mp15':      player.maxMp += 15; player.mp  = Math.min((player.mp  || 0) + 15, player.maxMp); break;
+    case 'str2':      player.stats.str += 2; break;
+    case 'str4':      player.stats.str += 4; break;
+    case 'dex2':      player.stats.dex += 2; break;
+    case 'def2':      player._bonusDef = (player._bonusDef || 0) + 2; break;
+    case 'fire_dmg':  player._fireDmgBonus = (player._fireDmgBonus || 0) + 1; break;
+    case 'luck5':     player._luckBonus = (player._luckBonus || 0) + 5; break;
+    case 'curse_str': player.stats.str -= 2; break;
+    case 'curse_dex': player.stats.dex -= 2; break;
+  }
+}
+
+// Remove equipment effect from player stats when an item is unequipped.
+export function removeItemEffect(player, item) {
+  if (!item?.effect) return;
+  switch (item.effect) {
+    case 'hp10':      player.maxHp -= 10; player.hp = Math.min(player.hp, player.maxHp); break;
+    case 'hp15':      player.maxHp -= 15; player.hp = Math.min(player.hp, player.maxHp); break;
+    case 'mp8':       player.maxMp -= 8;  player.mp  = Math.min(player.mp  || 0, player.maxMp); break;
+    case 'mp15':      player.maxMp -= 15; player.mp  = Math.min(player.mp  || 0, player.maxMp); break;
+    case 'str2':      player.stats.str -= 2; break;
+    case 'str4':      player.stats.str -= 4; break;
+    case 'dex2':      player.stats.dex -= 2; break;
+    case 'def2':      player._bonusDef = Math.max(0, (player._bonusDef || 0) - 2); break;
+    case 'fire_dmg':  player._fireDmgBonus = Math.max(0, (player._fireDmgBonus || 0) - 1); break;
+    case 'luck5':     player._luckBonus = Math.max(0, (player._luckBonus || 0) - 5); break;
+    case 'curse_str': player.stats.str += 2; break;
+    case 'curse_dex': player.stats.dex += 2; break;
+  }
+}
+
+// Human-readable description of an item effect for the inventory UI.
+export function getEffectDescription(effect) {
+  const map = {
+    hp10:      '+10 Max HP',
+    hp15:      '+15 Max HP',
+    mp8:       '+8 Max MP',
+    mp15:      '+15 Max MP',
+    str2:      '+2 Strength',
+    str4:      '+4 Strength',
+    dex2:      '+2 Dexterity',
+    def2:      '+2 Defense',
+    fire_dmg:  '+1 Fire Damage',
+    luck5:     '+5% Dodge Chance',
+    curse_str: '-2 Strength (CURSED)',
+    curse_dex: '-2 Dexterity (CURSED)',
+    str_boost: '+2 STR for 5 turns',
+  };
+  return map[effect] || null;
+}
