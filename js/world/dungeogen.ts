@@ -356,14 +356,15 @@ export function generateDungeon(rng, loc) {
     g.exits.push({ x: lastPos.x, y: lastPos.y, dest: 'world' });
   }
 
-  // Place chests
+  // Place chests (30% chance each chest is locked)
   const chestRooms = rng.shuffle([...rooms]).slice(0, rng.int(2, 5));
   for (const room of chestRooms) {
     const cx = room.x + rng.int(1, Math.max(1, room.w - 2));
     const cy = room.y + rng.int(1, Math.max(1, room.h - 2));
     if (getTile(g, cx, cy) === LOC_TILE.FLOOR) {
+      const locked = rng.chance(30);
       setTile(g, cx, cy, LOC_TILE.CHEST);
-      g.chests.push({ x: cx, y: cy, tier: danger, opened: false });
+      g.chests.push({ x: cx, y: cy, tier: danger, opened: false, locked });
     }
   }
 

@@ -350,6 +350,47 @@ export class LocationScreen {
     const chest = activeData.chests?.find(c => c.x === x && c.y === y && !c.opened);
     if (!chest) { this.game.addMessage('The chest is empty.', 'normal'); return; }
 
+    // Handle locked chests
+    if (chest.locked) {
+      const player = this.game.player;
+      const hasSkill = player?.skills?.includes('lockpicking');
+      const lockpickIdx = player?.inventory.findIndex(i => i.id === 'lockpick');
+      const hasLockpick = lockpickIdx !== undefined && lockpickIdx >= 0;
+
+      if (!hasSkill && !hasLockpick) {
+        this.game.addMessage('The chest is locked. You need a lockpick or lockpicking skill.', 'system');
+        return;
+      }
+
+      // Lockpicking skill: 80% success; lockpick item alone: 50%
+      const successChance = hasSkill ? 80 : 50;
+      if (!this.game.rng.chance(successChance)) {
+        if (hasLockpick && !hasSkill) {
+          // Lockpick breaks on failure
+          if (player.inventory[lockpickIdx].qty > 1) {
+            player.inventory[lockpickIdx].qty--;
+          } else {
+            player.inventory.splice(lockpickIdx, 1);
+          }
+          this.game.addMessage('You try to pick the lock, but the pick snaps!', 'system');
+        } else {
+          this.game.addMessage('You fail to pick the lock.', 'system');
+        }
+        return;
+      }
+
+      // Success - consume lockpick if used without skill
+      if (hasLockpick && !hasSkill) {
+        if (player.inventory[lockpickIdx].qty > 1) {
+          player.inventory[lockpickIdx].qty--;
+        } else {
+          player.inventory.splice(lockpickIdx, 1);
+        }
+      }
+      this.game.addMessage('You pick the lock!', 'normal');
+      chest.locked = false;
+    }
+
     chest.opened = true;
     activeData.tiles[y * activeData.width + x] = LOC_TILE.CHEST_OPEN;
 

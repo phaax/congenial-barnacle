@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { C, COLS, ROWS, STATE, SLOT } from '../../data/constants';
-import { getItem, ITEMS } from '../../data/items';
+import { getItem, ITEMS, applyItemEffect, removeItemEffect, getEffectDescription } from '../../data/items';
 import { ScrollList } from '../menu';
 
 export class InventoryScreen {
@@ -84,9 +84,20 @@ export class InventoryScreen {
 
     const slot = item.slot;
     if (player.equipment[slot] === this.selected.id) {
+      // Unequipping
+      removeItemEffect(player, item);
       player.equipment[slot] = null;
       this.game.addMessage(`Unequipped ${item.name}.`, 'normal');
     } else {
+      // Remove old item in that slot first
+      if (player.equipment[slot]) {
+        const oldItem = getItem(player.equipment[slot]);
+        removeItemEffect(player, oldItem);
+      }
+      if (item.cursed) {
+        this.game.addMessage(`WARNING: ${item.name} feels malevolent as you put it on!`, 'system');
+      }
+      applyItemEffect(player, item);
       player.equipment[slot] = this.selected.id;
       this.game.addMessage(`Equipped ${item.name}.`, 'normal');
     }
@@ -191,22 +202,32 @@ export class InventoryScreen {
         renderer.write(42, 10, item.name, C.YELLOW, C.BLACK);
         renderer.write(42, 11, `Type: ${item.type}`, C.LIGHT_GRAY, C.BLACK);
 
-        if (item.dmg) renderer.write(42, 12, `Damage: ${item.dmg[0]}-${item.dmg[1]}`, C.RED, C.BLACK);
-        if (item.def) renderer.write(42, 13, `Defense: ${item.def}`, C.BLUE, C.BLACK);
-        if (item.heal) renderer.write(42, 14, `Heals: ${item.heal} HP`, C.GREEN, C.BLACK);
-        if (item.mp)   renderer.write(42, 15, `Restores: ${item.mp} MP`, C.CYAN, C.BLACK);
+        let detailRow = 12;
+        if (item.dmg) { renderer.write(42, detailRow, `Damage: ${item.dmg[0]}-${item.dmg[1]}`, C.RED, C.BLACK); detailRow++; }
+        if (item.def) { renderer.write(42, detailRow, `Defense: +${item.def}`, C.BLUE, C.BLACK); detailRow++; }
+        if (item.heal) { renderer.write(42, detailRow, `Heals: ${item.heal} HP`, C.GREEN, C.BLACK); detailRow++; }
+        if (item.mp)   { renderer.write(42, detailRow, `Restores: ${item.mp} MP`, C.CYAN, C.BLACK); detailRow++; }
+        if (item.effect) {
+          const effDesc = getEffectDescription(item.effect);
+          if (effDesc) {
+            const effColor = item.cursed ? C.MAGENTA : C.CYAN;
+            renderer.write(42, detailRow, `Effect: ${effDesc}`, effColor, C.BLACK);
+            detailRow++;
+          }
+        }
 
-        renderer.write(42, 16, `Value: ${item.value}g`, C.YELLOW, C.BLACK);
+        renderer.write(42, detailRow, `Value: ${item.value}g`, C.YELLOW, C.BLACK);
 
         // Description wrapped
         const descLines = wrapText(item.desc || '', COLS - 44);
-        for (let i = 0; i < descLines.length && i < 4; i++) {
-          renderer.write(42, 18 + i, descLines[i], C.DARK_GRAY, C.BLACK);
+        for (let i = 0; i < descLines.length && i < 3; i++) {
+          renderer.write(42, detailRow + 2 + i, descLines[i], C.DARK_GRAY, C.BLACK);
         }
 
         // Equipped indicator
         const isEquipped = Object.values(player.equipment).includes(this.selected.id);
         if (isEquipped) renderer.write(42, 23, '[ EQUIPPED ]', C.GREEN, C.BLACK);
+        if (item.cursed && isEquipped) renderer.write(55, 23, '[CURSED]', C.MAGENTA, C.BLACK);
       }
     }
 
