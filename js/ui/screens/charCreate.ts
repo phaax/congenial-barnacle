@@ -305,15 +305,15 @@ export class CharCreateScreen {
 
   _handleListKey(event, list) {
     const key = event.key;
-    if (key === 'ArrowUp'   || key === 'k' || key === 'w') { event.preventDefault(); list.moveUp();   return; }
-    if (key === 'ArrowDown' || key === 'j' || key === 's') { event.preventDefault(); list.moveDown(); return; }
+    if (key === 'ArrowUp'   || key === 'w') { event.preventDefault(); list.moveUp();   return; }
+    if (key === 'ArrowDown' || key === 's') { event.preventDefault(); list.moveDown(); return; }
     if (key === 'Enter' || key === 'Tab')                  { event.preventDefault(); this._nextStep(); return; }
   }
 
   _handleSkillsKey(event) {
     const key = event.key;
-    if (key === 'ArrowUp'   || key === 'k') { event.preventDefault(); this.skillList.moveUp();   return; }
-    if (key === 'ArrowDown' || key === 'j') { event.preventDefault(); this.skillList.moveDown(); return; }
+    if (key === 'ArrowUp')   { event.preventDefault(); this.skillList.moveUp();   return; }
+    if (key === 'ArrowDown') { event.preventDefault(); this.skillList.moveDown(); return; }
     if (key === ' ') {
       event.preventDefault();
       this._toggleSkill(this.skillList.selected);

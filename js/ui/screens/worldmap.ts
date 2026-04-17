@@ -50,7 +50,6 @@ export class WorldMapScreen {
     const moves = {
       'ArrowUp': [0,-1], 'ArrowDown': [0,1], 'ArrowLeft': [-1,0], 'ArrowRight': [1,0],
       'w': [0,-1], 's': [0,1], 'a': [-1,0], 'd': [1,0],
-      'k': [0,-1], 'j': [0,1], 'h': [-1,0], 'l': [1,0],
     };
 
     if (e.key in moves) {

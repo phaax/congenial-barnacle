@@ -78,7 +78,7 @@ export class JukeboxScreen {
     }
 
     // Arrow keys and Page Up/Down handled by ScrollList
-    if (k === 'ArrowUp' || k === 'w' || k === 'W' || k === 'k' || k === 'K') {
+    if (k === 'ArrowUp' || k === 'w' || k === 'W') {
       event.preventDefault();
       this.list.moveUp();
       return;
